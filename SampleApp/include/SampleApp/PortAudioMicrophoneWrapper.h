@@ -25,6 +25,9 @@
 
 #include <portaudio.h>
 
+#include "DSPKeyWordDetector.h"
+#include <DefaultClient/DefaultClient.h>
+
 namespace alexaClientSDK {
 namespace sampleApp {
 
@@ -38,7 +41,8 @@ public:
      * @return A unique_ptr to a @c PortAudioMicrophoneWrapper if creation was successful and @c nullptr otherwise.
      */ 
     static std::unique_ptr<PortAudioMicrophoneWrapper> create(
-            std::shared_ptr<avsCommon::avs::AudioInputStream> stream);
+            std::shared_ptr<avsCommon::avs::AudioInputStream> stream, void(*fp)(int startIndex , int endIndex),
+			std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client);
 
     /**
      * Stops streaming from the microphone.
@@ -58,6 +62,22 @@ public:
      * Destructor.
      */
     ~PortAudioMicrophoneWrapper();
+
+    static void(*call_notifier)(int startIndex , int endIndex);
+    static std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> m_client;
+    std::thread dsp_process;
+    void do_dsp_processing();
+
+    std::thread debug_pcm_write;
+    void do_debug_pcm_write();
+
+    std::thread aip_led_thread;
+    void do_aip_led_thread();
+    void led_show(bool on);
+    void led_init();
+
+    std::thread pcm_read_thread;
+    void do_pcm_read();
 
 private:
     /**

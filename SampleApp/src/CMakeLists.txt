@@ -13,7 +13,10 @@ target_include_directories(SampleApp PUBLIC
     "${SampleApp_SOURCE_DIR}/include"
     "${MediaPlayer_SOURCE_DIR}/include"
     "${DefaultClient_SOURCE_DIR}/include"
-    "${PORTAUDIO_INCLUDE_DIR}")
+    "${PORTAUDIO_INCLUDE_DIR}"
+    "${KWD_SOURCE_DIR}/include"
+    "${KWD_SOURCE_DIR}/DSP/include" )
+
 
 target_link_libraries(SampleApp 
     DefaultClient
@@ -28,6 +31,10 @@ endif()
 
 if(SENSORY_KEY_WORD_DETECTOR)
     target_link_libraries(SampleApp SENSORY)
+endif()
+
+if(DSP_KEY_WORD_DETECTOR)
+    target_link_libraries(SampleApp DSP)
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

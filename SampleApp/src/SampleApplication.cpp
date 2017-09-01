@@ -65,7 +65,7 @@ static const float KITT_AI_AUDIO_GAIN = 2.0;
 /// Whether Kitt.ai should apply front end audio processing.
 static const bool KITT_AI_APPLY_FRONT_END_PROCESSING = true;
 #endif
-
+std::unique_ptr<alexaClientSDK::kwd::DSPKeyWordDetector> m_detector;
 /// A set of all log levels.
 static const std::set<alexaClientSDK::avsCommon::utils::logger::Level> allLevels = {
         alexaClientSDK::avsCommon::utils::logger::Level::DEBUG9,
@@ -84,6 +84,11 @@ static const std::set<alexaClientSDK::avsCommon::utils::logger::Level> allLevels
         alexaClientSDK::avsCommon::utils::logger::Level::CRITICAL,
         alexaClientSDK::avsCommon::utils::logger::Level::NONE
 };
+
+void notify_detector(int startIndex , int endIndex)
+{
+    m_detector->notifyDetection(startIndex,endIndex);
+}
 
 /**
  * Gets a log level consumable by the SDK based on the user input string for log level.
@@ -302,7 +307,7 @@ bool SampleApplication::initialize(
             holdCanBeOverridden);
 
     std::shared_ptr<alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper> micWrapper = 
-            alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper::create(sharedDataStream);
+            alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper::create(sharedDataStream,&notify_detector , client);
     if (!micWrapper) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create PortAudioMicrophoneWrapper!");
         return false;
@@ -322,16 +327,15 @@ bool SampleApplication::initialize(
             wakeCanOverride, 
             wakeCanBeOverridden);
 
-    // This observer is notified any time a keyword is detected and notifies the DefaultClient to start recognizing. 
+    // This observer is notified any time a keyword is detected and notifies the DefaultClient to start recognizing.
     auto keywordObserver = std::make_shared<alexaClientSDK::sampleApp::KeywordObserver>(client, wakeWordAudioProvider);
-
 #if defined(KWD_KITTAI)
     m_keywordDetector = alexaClientSDK::kwd::KittAiKeyWordDetector::create(
             sharedDataStream,
             compatibleAudioFormat,
             {keywordObserver},
             std::unordered_set<
-                    std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(), 
+                    std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(),
             pathToInputFolder + "/common.res",
             {{pathToInputFolder + "/alexa.umdl", "ALEXA", KITT_AI_SENSITIVITY}},
             KITT_AI_AUDIO_GAIN,
@@ -347,13 +351,28 @@ bool SampleApplication::initialize(
         {keywordObserver},
         std::unordered_set<
                 std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(),
-        pathToInputFolder + "/spot-alexa-rpi-31000.snsr");      
+        pathToInputFolder + "/spot-alexa-rpi-31000.snsr");
     if (!m_keywordDetector) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create SensoryKeywWordDetector!");
         return false;
     }
+#elif defined(KWD_DSP)
+    alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Creating DSPC Engine..");
+    kwd::DSPKeyWordDetector::DSPConfiguration config;
+
+    m_detector = alexaClientSDK::kwd::DSPKeyWordDetector::create(
+            sharedDataStream,
+            compatibleAudioFormat,
+            {keywordObserver},
+            std::unordered_set<
+              std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(),
+            "",
+            {config},
+            2.0,
+            false );
+    alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("DSPC engine created");
 #endif
-    
+
     // If wake word is enabled, then creating the interaction manager with a wake word audio provider.
     auto interactionManager = std::make_shared<alexaClientSDK::sampleApp::InteractionManager>(
             client, 

@@ -65,6 +65,8 @@ public:
     /// Alias to the @c AudioInputProcessorObserverInterface for brevity.
     using ObserverInterface = avsCommon::sdkInterfaces::AudioInputProcessorObserverInterface;
 
+    ObserverInterface::State getState() { return m_state; }
+
     /// A reserved @c Index value which is considered invalid.
     static const auto INVALID_INDEX = std::numeric_limits<avsCommon::avs::AudioInputStream::Index>::max();
 

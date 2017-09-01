@@ -111,8 +111,13 @@ private:
         /// The converter element.
         GstElement* converter;
 
+        /// The resampler element.
+        GstElement* resampler;
+
+        GstCaps* caps;
+
         /// The sink element.
-        GstElement* audioSink;
+         GstElement* audioSink;
 
         /// Pipeline element.
         GstElement* pipeline;

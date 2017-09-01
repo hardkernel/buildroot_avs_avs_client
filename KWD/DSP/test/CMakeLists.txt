@@ -1,0 +1,5 @@
+set(INCLUDES "${KWD_SOURCE_DIR}/include" "${DSP_KEY_WORD_DETECTOR_INCLUDE_DIR}")
+
+set(INPUTFOLDER "${KWD_SOURCE_DIR}/inputs")
+
+discover_unit_tests("${INCLUDES}" DSP "${INPUTFOLDER}")
