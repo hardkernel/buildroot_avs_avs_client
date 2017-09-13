@@ -23,6 +23,8 @@
 #include <AVSCommon/SDKInterfaces/AuthObserverInterface.h>
 #include <AVSCommon/Utils/Threading/Executor.h>
 
+#include "ledClient.h"
+
 namespace alexaClientSDK {
 namespace sampleApp {
 

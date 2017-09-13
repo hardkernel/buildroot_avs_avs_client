@@ -421,7 +421,6 @@ std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
     fp_input = fopen("input.bin" , "wb");
     fp_output = fopen("output.bin" , "wb");
 #endif
-    portAudioMicrophoneWrapper->led_init();
 
     return portAudioMicrophoneWrapper;
 }
@@ -831,42 +830,5 @@ void PortAudioMicrophoneWrapper::do_pcm_read() {
 error:
     if (handle) snd_pcm_close(handle);
 }
-
-void PortAudioMicrophoneWrapper::do_aip_led_thread(){
-    while (1) {
-        AudioInputProcessor::ObserverInterface::State state = m_client->m_audioInputProcessor->getState();
-        //printf(" state %d \n" , state);
-        if (state == AudioInputProcessor::ObserverInterface::State::RECOGNIZING) {
-            led_show(true);
-        } else {
-            led_show(false);
-        }
-    }
-}
-
-void PortAudioMicrophoneWrapper::led_show(bool on){
-   FILE *fd = fopen("/sys/class/i2c/slave", "w");
-   const char cmd_on[] = "0x1f 2 0 1 0xff";
-   const char cmd_off[] = "0x1f 2 0 1 0x0";
-   if (fd) {
-       if (on)
-           fwrite(cmd_on, sizeof(cmd_on), 1, fd);
-       else
-           fwrite(cmd_off, sizeof(cmd_off), 1, fd);
-       fclose(fd);
-   }
-}
-
-void PortAudioMicrophoneWrapper::led_init() {
-    FILE *fd = fopen("/sys/class/i2c/slave", "w");
-    const char cmd_init[] = "0x1f 2 0 3 0x0";
-    if (fd) {
-        fwrite(cmd_init, sizeof(cmd_init), 1, fd);
-        fclose(fd);
-    }
-
-    aip_led_thread = std::thread (&PortAudioMicrophoneWrapper::do_aip_led_thread,this);
-}
-
 } // namespace sampleApp
 } // namespace alexaClientSDK

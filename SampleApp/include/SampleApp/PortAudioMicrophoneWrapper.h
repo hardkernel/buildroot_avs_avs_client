@@ -71,11 +71,6 @@ public:
     std::thread debug_pcm_write;
     void do_debug_pcm_write();
 
-    std::thread aip_led_thread;
-    void do_aip_led_thread();
-    void led_show(bool on);
-    void led_init();
-
     std::thread pcm_read_thread;
     void do_pcm_read();
 

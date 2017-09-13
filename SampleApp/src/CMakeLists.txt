@@ -14,6 +14,7 @@ target_include_directories(SampleApp PUBLIC
     "${MediaPlayer_SOURCE_DIR}/include"
     "${DefaultClient_SOURCE_DIR}/include"
     "${PORTAUDIO_INCLUDE_DIR}"
+    "${LEDRING_INCLUDE_DIR}"
     "${KWD_SOURCE_DIR}/include"
     "${KWD_SOURCE_DIR}/DSP/include" )
 
@@ -21,7 +22,8 @@ target_include_directories(SampleApp PUBLIC
 target_link_libraries(SampleApp 
     DefaultClient
     AuthDelegate 
-    MediaPlayer 
+    MediaPlayer
+    "${LEDRING_LIB_PATH}"
     "${PORTAUDIO_LIB_PATH}")
 
 if(KITTAI_KEY_WORD_DETECTOR)
