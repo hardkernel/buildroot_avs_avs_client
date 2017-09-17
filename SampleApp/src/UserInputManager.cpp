@@ -42,27 +42,37 @@ UserInputManager::UserInputManager(std::shared_ptr<InteractionManager> interacti
         m_interactionManager{interactionManager} { 
 }
 
+void UserInputManager::setMode(const string& rmode) {
+    std::cout<<"UserInputManager runMode:"<<rmode<<std::endl;
+    menuMode = rmode;
+}
+
 void UserInputManager::run() {
+    char x;
     if (!m_interactionManager) {
         return;
     }
-    m_interactionManager->begin();
+    m_interactionManager->begin(menuMode);
     while(true) {
-        char x;
-        std::cin >> x;
-        x = ::tolower(x);
-        if (x == QUIT) {
-            return;
-        } else if (x == INFO) {
-            m_interactionManager->help();
-        } else if (x == MIC_TOGGLE) {
-            m_interactionManager->microphoneToggle();
-        } else if (x == HOLD) {
-            m_interactionManager->holdToggled();
-        } else if (x == TAP) {
-            m_interactionManager->tap();
-        } else if (x == STOP) {
-            m_interactionManager->stopForegroundActivity();
+        if (menuMode == "front") {
+            std::cin >> x;
+            x = ::tolower(x);
+            if (x == QUIT) {
+                m_interactionManager->sampleapp_exit();
+                return;
+            } else if (x == INFO) {
+                m_interactionManager->help();
+            } else if (x == MIC_TOGGLE) {
+                m_interactionManager->microphoneToggle();
+            } else if (x == HOLD) {
+                m_interactionManager->holdToggled();
+            } else if (x == TAP) {
+                m_interactionManager->tap();
+            } else if (x == STOP) {
+                m_interactionManager->stopForegroundActivity();
+            }
+        } else {
+            sleep(10);
         }
     }
 }

@@ -114,23 +114,31 @@ static alexaClientSDK::sampleApp::ConsolePrinter g_consolePrinter;
 std::unique_ptr<SampleApplication> SampleApplication::create(
         const std::string& pathToConfig,
         const std::string& pathToInputFolder,
-        const std::string& logLevel) {
+        const std::string& logLevel,
+        const std::string& runMode) {
     auto clientApplication = std::unique_ptr<SampleApplication>(new SampleApplication);
-    if (!clientApplication->initialize(pathToConfig, pathToInputFolder, logLevel)) {
+    if (!clientApplication->initialize(pathToConfig, pathToInputFolder, logLevel, runMode)) {
         ConsolePrinter::simplePrint("Failed to initialize SampleApplication");
         return nullptr;
     }
     return clientApplication;
 }
 
+void SampleApplication::key_input_run() {
+    m_userInputKeyManager->run();
+}
+
 void SampleApplication::run() {
+    std::cout<<"SampleApplication runMode:"<<this->rMode<<std::endl;
+    m_userInputManager->setMode(rMode);
     m_userInputManager->run();
 }
 
 bool SampleApplication::initialize(
         const std::string& pathToConfig,
         const std::string& pathToInputFolder,
-        const std::string& logLevel) {
+        const std::string& logLevel,
+        const std::string& runMode) {
     /*
      * Set up the SDK logging system to write to the SampleApp's ConsolePrinter.  Also adjust the logging level
      * if requested.
@@ -138,8 +146,8 @@ bool SampleApplication::initialize(
     if (!logLevel.empty()) {
         auto logLevelValue = getLogLevelFromUserInput(logLevel);
         if (alexaClientSDK::avsCommon::utils::logger::Level::UNKNOWN == logLevelValue) {
-            alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Unknown log level input!");
-            alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Possible log level options are: ");
+            alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("[1]Unknown log level input!");
+            alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("[1]Possible log level options are: ");
             for (auto it = allLevels.begin(); 
                  it != allLevels.end(); 
                  ++it) {
@@ -154,7 +162,30 @@ bool SampleApplication::initialize(
             "Running app with log level: " +
             alexaClientSDK::avsCommon::utils::logger::convertLevelToName(logLevelValue));
         g_consolePrinter.setLevel(logLevelValue);
+    } else {
+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("[2]Unknown log level input!");
+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("[2]Possible log level options are: ");
+        for (auto it = allLevels.begin(); it != allLevels.end(); ++it) {
+            alexaClientSDK::sampleApp::ConsolePrinter::simplePrint(
+            alexaClientSDK::avsCommon::utils::logger::convertLevelToName(*it)
+            );
+        }
+        return false;
     }
+
+    if (!runMode.empty()) {
+        if ((runMode != "front") && (runMode != "back")) {
+            alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("[1]Unknown run mode!");
+            alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("[1]Possible run mode options are: [front],[back]");
+            return false;
+        }
+        this->rMode = runMode;
+    } else {
+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("[2]Unknown run mode!");
+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("[2]Possible run mode options are: [front],[back]");
+        return false;
+    }
+
     alexaClientSDK::avsCommon::utils::logger::LoggerSinkManager::instance().changeSinkLogger(g_consolePrinter);
 
     /* 
@@ -398,6 +429,14 @@ bool SampleApplication::initialize(
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create UserInputManager!");
         return false;
     }
+
+    m_userInputKeyManager = alexaClientSDK::sampleApp::UserInputKeyManager::create(interactionManager);
+    if (!m_userInputKeyManager) {
+        alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create UserInputKeyManager!");
+        return false;
+    }
+
+    keyInputThread = std::thread (&SampleApplication::key_input_run,this);
 
     return true;
 }

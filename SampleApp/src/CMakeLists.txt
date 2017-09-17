@@ -3,11 +3,14 @@ add_executable(SampleApp
     PortAudioMicrophoneWrapper.cpp 
     InteractionManager.cpp 
     UserInputManager.cpp
+    UserInputKeyManager.cpp
     ConsolePrinter.cpp
     UIManager.cpp
     KeywordObserver.cpp
     ConnectionObserver.cpp
-    SampleApplication.cpp)
+    SampleApplication.cpp
+    KeyEvent.cpp
+    KeyEventProcess.cpp)
 
 target_include_directories(SampleApp PUBLIC 
     "${SampleApp_SOURCE_DIR}/include"

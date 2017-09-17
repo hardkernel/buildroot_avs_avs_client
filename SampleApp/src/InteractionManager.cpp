@@ -35,15 +35,20 @@ InteractionManager::InteractionManager(
     m_wakeWordAudioProvider{wakeWordAudioProvider},
     m_isHoldOccurring{false},
     m_isTapOccurring{false},
+    m_runMode{NULL},
     m_isMicOn{true} { 
         m_micWrapper->startStreamingMicrophoneData();
+        m_userInterface->led_init();
 };
 
-void InteractionManager::begin() {
+void InteractionManager::begin(const string& showFlag) {
+    m_runMode = showFlag;
     m_executor.submit(
         [this] () {
             m_userInterface->printWelcomeScreen();
-            m_userInterface->printHelpScreen();
+            if ( m_runMode == "front") {
+                m_userInterface->printHelpScreen();
+            }
         }
     );
 }
@@ -52,6 +57,14 @@ void InteractionManager::help() {
     m_executor.submit(
         [this] () {
             m_userInterface->printHelpScreen();
+        }
+    );
+}
+
+void InteractionManager::sampleapp_exit() {
+    m_executor.submit(
+        [this] () {
+            m_userInterface->led_release();
         }
     );
 }

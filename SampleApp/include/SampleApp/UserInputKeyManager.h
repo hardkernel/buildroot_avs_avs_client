@@ -1,5 +1,5 @@
 /*
- * UserInputManager.h
+ * UserInputKeyManager.h
  *
  * Copyright (c) 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
@@ -15,8 +15,8 @@
  * permissions and limitations under the License.
  */
 
-#ifndef ALEXA_CLIENT_SDK_SAMPLE_APP_INCLUDE_SAMPLE_APP_USER_INPUT_MANAGER_H_
-#define ALEXA_CLIENT_SDK_SAMPLE_APP_INCLUDE_SAMPLE_APP_USER_INPUT_MANAGER_H_
+#ifndef ALEXA_CLIENT_SDK_SAMPLE_APP_INCLUDE_SAMPLE_APP_USER_INPUT_KEY_MANAGER_H_
+#define ALEXA_CLIENT_SDK_SAMPLE_APP_INCLUDE_SAMPLE_APP_USER_INPUT_KEY_MANAGER_H_
 
 #include <memory>
 
@@ -26,7 +26,7 @@ namespace alexaClientSDK {
 namespace sampleApp {
 
 /// Observes user input from the console and notifies the interaction manager of the user's intentions.
-class UserInputManager {
+class UserInputKeyManager {
 public:
     /**
      * Create a UserInputManager.
@@ -34,25 +34,23 @@ public:
      * @param interactionManager An instance of the @c InteractionManager used to manage user input.
      * @return Returns a new @c UserInputManager, or @c nullptr if the operation failed.
      */
-    static std::unique_ptr<UserInputManager> create(std::shared_ptr<InteractionManager> interactionManager);
+    static std::unique_ptr<UserInputKeyManager> create(std::shared_ptr<InteractionManager> interactionManager);
 
     /**
      * Processes user input forever. Returns upon a quit command.
      */
     void run();
 
-    void setMode(const string& rmode);
-
-    std::string menuMode;
-
 private:
     /**
      * Constructor.
      */
-    UserInputManager(std::shared_ptr<InteractionManager> interactionManager);
+    UserInputKeyManager(std::shared_ptr<InteractionManager> interactionManager);
 
     /// The main interaction manager that interfaces with the SDK.
     std::shared_ptr<InteractionManager> m_interactionManager;
+
+    std::shared_ptr<InteractionManager> m_interactionKeyManager;
 };
 
 } // namespace sampleApp

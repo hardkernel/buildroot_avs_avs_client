@@ -49,7 +49,7 @@ public:
     /**
      * Begins the interaction between the Sample App and the user. This should only be called at startup.
      */
-    void begin();
+    void begin(const string& showFlag);
 
     /**
      * Should be called when a user requests help.
@@ -64,6 +64,11 @@ public:
      * then this will do nothing as the microphone is already off.
      */
     void microphoneToggle();
+
+    /**
+    * SampleApp exit.
+    */
+    void sampleapp_exit();
 
     /**
      * Should be called whenever a user presses or releases the hold button.
@@ -107,6 +112,8 @@ private:
 
     /// Whether the microphone is currently turned on.
     bool m_isMicOn;
+
+    std::string m_runMode;
 
     /**
      * An internal executor that performs execution of callable objects passed to it sequentially but asynchronously.

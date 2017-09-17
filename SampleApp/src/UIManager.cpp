@@ -67,11 +67,14 @@ static const std::string HELP_MESSAGE =
 "|       Press 'q' followed by Enter at any time to quit the application.     |\n"
 "+----------------------------------------------------------------------------+\n";
 static int ledres = 0;
+static int ledstate = -1;
 static struct leds state[]={
-    {1,1,1,0,_RED,_POSITIVE,_MOVE},
-    {6,1,6,0,_RED,_SKIP,_MOVE},
-    {2,2,9,0,_RED,_POSITIVE,_MOVE},
-    {6,6,8,0,_RED,_SKIP,_OTHER},
+    {1,1,9,3,_RED,_POSITIVE,_MOVE},
+    {6,1,7,0,_RED,_SKIP,_MOVE},
+    {2,1,9,0,_RED,_POSITIVE,_MOVE},
+    {6,1,8,0,_RED,_SKIP,_STATIC},
+    {0,0,0,0,_RED,_SKIP,_OTHER},
+    {6,1,6,0,_RED,_SKIP,_STATIC},
 };
 
 void UIManager::onDialogUXStateChanged(DialogUXState state) {
@@ -86,6 +89,24 @@ void UIManager::onDialogUXStateChanged(DialogUXState state) {
     );
 }
 
+void UIManager::led_release() {
+    ledres = ledShow(&state[4]);
+    if (ledres < 0) printf("[%d]ledShow stop state err!\n", __LINE__);
+    ledres = ledRelease();
+    if (ledres < 0) printf("[%d]ledRelease err!\n", __LINE__);
+    ledstate = -1;
+    ConsolePrinter::prettyPrint("led release .....ok!");
+}
+
+void UIManager::led_init() {
+    if (ledstate == -1) {
+        ledres = ledInit();
+        if (ledres < 0) printf("[%d]ledInit err!\n", __LINE__);
+        ledstate=1;
+        ConsolePrinter::prettyPrint("led init .....ok!");
+    }
+}
+
 void UIManager::onConnectionStatusChanged(const Status status, const ChangedReason reason) {
     m_executor.submit(
         [this, status] () {
@@ -94,6 +115,9 @@ void UIManager::onConnectionStatusChanged(const Status status, const ChangedReas
             }
             m_connectionStatus = status;
             printState();
+            if (m_connectionStatus == avsCommon::sdkInterfaces::ConnectionStatusObserverInterface::Status::PENDING) {
+                this->led_init();
+            }
         }
     );
 }
@@ -117,6 +141,7 @@ void UIManager::printHelpScreen() {
 void UIManager::microphoneOff() {
     m_executor.submit(
         [] () {
+            ledres = ledShow(&state[5]); if (ledres < 0) printf("[%d]ledShow Idle state err!\n", __LINE__);
             ConsolePrinter::prettyPrint("Microphone Off!");
         }
     );
@@ -132,12 +157,10 @@ void UIManager::microphoneOn() {
 
 void UIManager::printState() {
     if (m_connectionStatus == avsCommon::sdkInterfaces::ConnectionStatusObserverInterface::Status::DISCONNECTED) {
-        ledres = ledRelease(); if (ledres < 0) printf("[%d]ledRelease err!\n", __LINE__);
         ConsolePrinter::prettyPrint("Client not connected!");
     } else if (m_connectionStatus == avsCommon::sdkInterfaces::ConnectionStatusObserverInterface::Status::PENDING) {
         ConsolePrinter::prettyPrint("Connecting...");
     } else if (m_connectionStatus == avsCommon::sdkInterfaces::ConnectionStatusObserverInterface::Status::CONNECTED) {
-        ledres = ledInit(); if (ledres < 0) printf("[%d]ledInit err!\n", __LINE__);
         ConsolePrinter::prettyPrint("Performing post connect actions...");
     } else {
         switch (m_dialogState) {

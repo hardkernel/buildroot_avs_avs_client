@@ -41,6 +41,12 @@ public:
     void onConnectionStatusChanged(const Status status, const ChangedReason reason) override;
 
     /**
+    * led ring.
+    */
+    void led_init();
+    void led_release();
+
+    /**
      * Prints the welcome screen.
      */
     void printWelcomeScreen();

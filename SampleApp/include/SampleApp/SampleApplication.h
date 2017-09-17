@@ -20,6 +20,7 @@
 
 #include "ConsolePrinter.h"
 #include "UserInputManager.h"
+#include "UserInputKeyManager.h"
 
 #ifdef KWD
 #include <KWD/AbstractKeywordDetector.h>
@@ -45,10 +46,15 @@ public:
     static std::unique_ptr<SampleApplication> create(
            const std::string& pathToConfig,
            const std::string& pathToInputFolder,
-           const std::string& logLevel = "");
+           const std::string& logLevel = "",
+	   const std::string& runMode = "");
 
     /// Runs the application, blocking until the user asks the application to quit.
     void run();
+
+    /// usr key input.
+    std::thread keyInputThread;
+    void key_input_run();
 
 private:
     /**
@@ -63,10 +69,16 @@ private:
     bool initialize(
            const std::string& pathToConfig,
            const std::string& pathToInputFolder,
-           const std::string& logLevel);
+           const std::string& logLevel,
+	   const std::string& runMode);
+
+    std::string rMode;
 
     /// The @c UserInputManager which controls the client.
     std::unique_ptr<UserInputManager> m_userInputManager;
+
+    /// The @c UserInputKeyManager which controls the client.
+    std::unique_ptr<UserInputKeyManager> m_userInputKeyManager;
 
 #ifdef KWD
     /// The Wakeword Detector which can wake up the client using audio input.
