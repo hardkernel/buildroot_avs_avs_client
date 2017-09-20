@@ -493,9 +493,6 @@ bool AudioInputProcessor::executeRecognize(
     // Note that we're preparing to send a Recognize event.
     m_preparingToSend = true;
 
-    //  Start assembling the context; we'll service the callback after assembling our Recognize event.
-    m_contextManager->getContext(shared_from_this());
-
     // Stop the ExpectSpeech timer so we don't get a timeout.
     m_expectingSpeechTimer.stop();
 
@@ -514,6 +511,8 @@ bool AudioInputProcessor::executeRecognize(
     // We can't assemble the MessageRequest until we receive the context.
     m_request.reset();
 
+    //  Start assembling the context; we'll service the callback after assembling our Recognize event.
+    m_contextManager->getContext(shared_from_this());
     return true;
 }
 

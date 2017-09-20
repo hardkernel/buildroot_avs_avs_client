@@ -179,9 +179,9 @@ bool DSPKeyWordDetector::init(avsCommon::utils::AudioFormat audioFormat) {
     return true;
 }
 
-void DSPKeyWordDetector::notifyDetection(int startIndex , int endIndex) {
+void DSPKeyWordDetector::notifyDetection(uint64_t startIndex , uint64_t endIndex) {
 
-    printf(" DSPKeyword startIndex %d endIndex %d \n" , startIndex ,endIndex);
+    printf(" DSPKeyword startIndex %llu endIndex %llu \n" , startIndex ,endIndex);
     notifyKeyWordDetectorStateObservers(KeyWordDetectorStateObserverInterface::KeyWordDetectorState::ACTIVE);
 
     notifyKeyWordObservers(m_stream,

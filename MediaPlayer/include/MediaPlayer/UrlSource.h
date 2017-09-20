@@ -68,6 +68,8 @@ public:
      */
     void preprocess() override;
 
+    bool m_hasReceivedAPlaylistCallback;
+    std::mutex m_mutex;
 private:
     /**
      * Constructor.

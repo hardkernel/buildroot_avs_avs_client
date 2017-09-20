@@ -37,7 +37,7 @@ static const unsigned long RING_BUFFER_SIZE = PREFERRED_SAMPLES_PER_CALLBACK_FOR
 
 int prev_state  = 0;
 std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> PortAudioMicrophoneWrapper::m_client;
-void (*PortAudioMicrophoneWrapper::call_notifier)(int startIndex , int endIndex);
+void (*PortAudioMicrophoneWrapper::call_notifier)(uint64_t startIndex , uint64_t endIndex);
 
 #if DUMP_DATA
 FILE* fp_input ; FILE* fp_output;
@@ -399,7 +399,7 @@ void setup_DSP() {
 }
 
 std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
-        std::shared_ptr<AudioInputStream> stream , void(*fp)(int startIndex , int endIndex),
+        std::shared_ptr<AudioInputStream> stream , void(*fp)(uint64_t startIndex , uint64_t endIndex),
         std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client) {
     if (!stream) {
         ConsolePrinter::simplePrint("Invalid stream passed to PortAudioMicrophoneWrapper");

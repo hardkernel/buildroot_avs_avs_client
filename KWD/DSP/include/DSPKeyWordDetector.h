@@ -87,7 +87,7 @@ public:
     //UINT32 out_samps = 0;
     //UINT32 out_chans = 0;
 
-    void notifyDetection(int startIndex , int endIndex);
+    void notifyDetection(uint64_t startIndex , uint64_t endIndex);
 
 private:
 

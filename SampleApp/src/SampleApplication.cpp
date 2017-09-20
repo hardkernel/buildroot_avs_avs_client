@@ -85,7 +85,7 @@ static const std::set<alexaClientSDK::avsCommon::utils::logger::Level> allLevels
         alexaClientSDK::avsCommon::utils::logger::Level::NONE
 };
 
-void notify_detector(int startIndex , int endIndex)
+void notify_detector(uint64_t startIndex , uint64_t endIndex)
 {
     m_detector->notifyDetection(startIndex,endIndex);
 }

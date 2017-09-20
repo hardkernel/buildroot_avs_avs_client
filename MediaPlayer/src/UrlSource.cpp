@@ -66,6 +66,7 @@ UrlSource::UrlSource(
             m_url{url},
             m_playlistParser{playlistParser},
             m_pipeline{pipeline} {
+                m_hasReceivedAPlaylistCallback = false;
 }
 
 bool UrlSource::init() {

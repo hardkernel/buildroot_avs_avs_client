@@ -41,7 +41,7 @@ public:
      * @return A unique_ptr to a @c PortAudioMicrophoneWrapper if creation was successful and @c nullptr otherwise.
      */ 
     static std::unique_ptr<PortAudioMicrophoneWrapper> create(
-            std::shared_ptr<avsCommon::avs::AudioInputStream> stream, void(*fp)(int startIndex , int endIndex),
+            std::shared_ptr<avsCommon::avs::AudioInputStream> stream, void(*fp)(uint64_t startIndex , uint64_t endIndex),
 			std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client);
 
     /**
@@ -63,7 +63,7 @@ public:
      */
     ~PortAudioMicrophoneWrapper();
 
-    static void(*call_notifier)(int startIndex , int endIndex);
+    static void(*call_notifier)(uint64_t startIndex , uint64_t endIndex);
     static std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> m_client;
     std::thread dsp_process;
     void do_dsp_processing();
