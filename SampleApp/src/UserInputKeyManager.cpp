@@ -47,7 +47,8 @@ void UserInputKeyManager::run() {
     ep->Init();
     while (true) {
         keyValue = ep->WaitKey();
-	if ( !strcmp(keyValue,"mute")) {
+
+        if ((keyValue != NULL) && !strcmp(keyValue,"mute")) {
             m_interactionKeyManager->microphoneToggle();
 	}
     }
