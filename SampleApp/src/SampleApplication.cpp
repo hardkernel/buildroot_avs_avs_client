@@ -24,7 +24,9 @@
 #elif KWD_SENSORY
 #include <Sensory/SensoryKeywordDetector.h>
 #endif
+#include <ACL/Transport/HTTPContentFetcherFactory.h>
 #include <Alerts/Storage/SQLiteAlertStorage.h>
+#include <Settings/SQLiteSettingStorage.h>
 #include <AuthDelegate/AuthDelegate.h>
 #include <AVSCommon/AVS/Initialization/AlexaClientSDKInit.h>
 #include <AVSCommon/Utils/Logger/LoggerSinkManager.h>
@@ -53,7 +55,7 @@ static const size_t MAX_READERS = 10;
 static const std::chrono::seconds AMOUNT_OF_AUDIO_DATA_IN_BUFFER = std::chrono::seconds(15);
 
 /// The size of the ring buffer.
-static const size_t BUFFER_SIZE_IN_SAMPLES = (SAMPLE_RATE_HZ) * AMOUNT_OF_AUDIO_DATA_IN_BUFFER.count();
+static const size_t BUFFER_SIZE_IN_SAMPLES = (SAMPLE_RATE_HZ)*AMOUNT_OF_AUDIO_DATA_IN_BUFFER.count();
 
 #ifdef KWD_KITTAI
 /// The sensitivity of the Kitt.ai engine.
@@ -68,22 +70,21 @@ static const bool KITT_AI_APPLY_FRONT_END_PROCESSING = true;
 std::unique_ptr<alexaClientSDK::kwd::DSPKeyWordDetector> m_detector;
 /// A set of all log levels.
 static const std::set<alexaClientSDK::avsCommon::utils::logger::Level> allLevels = {
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG9,
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG8,
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG7,
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG6,
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG5,
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG4,
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG3,
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG2,
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG1,
-        alexaClientSDK::avsCommon::utils::logger::Level::DEBUG0,
-        alexaClientSDK::avsCommon::utils::logger::Level::INFO,
-        alexaClientSDK::avsCommon::utils::logger::Level::WARN,
-        alexaClientSDK::avsCommon::utils::logger::Level::ERROR,
-        alexaClientSDK::avsCommon::utils::logger::Level::CRITICAL,
-        alexaClientSDK::avsCommon::utils::logger::Level::NONE
-};
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG9,
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG8,
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG7,
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG6,
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG5,
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG4,
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG3,
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG2,
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG1,
+    alexaClientSDK::avsCommon::utils::logger::Level::DEBUG0,
+    alexaClientSDK::avsCommon::utils::logger::Level::INFO,
+    alexaClientSDK::avsCommon::utils::logger::Level::WARN,
+    alexaClientSDK::avsCommon::utils::logger::Level::ERROR,
+    alexaClientSDK::avsCommon::utils::logger::Level::CRITICAL,
+    alexaClientSDK::avsCommon::utils::logger::Level::NONE};
 
 void notify_detector(uint64_t startIndex , uint64_t endIndex)
 {
@@ -112,10 +113,10 @@ static alexaClientSDK::avsCommon::utils::logger::Level getLogLevelFromUserInput(
 static alexaClientSDK::sampleApp::ConsolePrinter g_consolePrinter;
 
 std::unique_ptr<SampleApplication> SampleApplication::create(
-        const std::string& pathToConfig,
-        const std::string& pathToInputFolder,
-        const std::string& logLevel,
-        const std::string& runMode) {
+    const std::string& pathToConfig,
+    const std::string& pathToInputFolder,
+    const std::string& logLevel,
+    const std::string& runMode) {
     auto clientApplication = std::unique_ptr<SampleApplication>(new SampleApplication);
     if (!clientApplication->initialize(pathToConfig, pathToInputFolder, logLevel, runMode)) {
         ConsolePrinter::simplePrint("Failed to initialize SampleApplication");
@@ -135,10 +136,10 @@ void SampleApplication::run() {
 }
 
 bool SampleApplication::initialize(
-        const std::string& pathToConfig,
-        const std::string& pathToInputFolder,
-        const std::string& logLevel,
-        const std::string& runMode) {
+    const std::string& pathToConfig,
+    const std::string& pathToInputFolder,
+    const std::string& logLevel,
+    const std::string& runMode) {
     /*
      * Set up the SDK logging system to write to the SampleApp's ConsolePrinter.  Also adjust the logging level
      * if requested.
@@ -152,8 +153,7 @@ bool SampleApplication::initialize(
                  it != allLevels.end(); 
                  ++it) {
                 alexaClientSDK::sampleApp::ConsolePrinter::simplePrint(
-                    alexaClientSDK::avsCommon::utils::logger::convertLevelToName(*it)
-                    );
+                    alexaClientSDK::avsCommon::utils::logger::convertLevelToName(*it));
             }
             return false;
         }
@@ -188,7 +188,7 @@ bool SampleApplication::initialize(
 
     alexaClientSDK::avsCommon::utils::logger::LoggerSinkManager::instance().changeSinkLogger(g_consolePrinter);
 
-    /* 
+    /*
      * This is a required step upon startup of the SDK before any modules are created. For that reason, it is being
      * called here, before creating the MediaPlayer, audio streams, DefaultClient, etc.
      */
@@ -202,30 +202,37 @@ bool SampleApplication::initialize(
         return false;
     }
 
+    auto httpContentFetcherFactory = std::make_shared<acl::HTTPContentFetcherFactory>();
+
     /*
      * Creating the media players. Here, the default GStreamer based MediaPlayer is being created. However, any
      * MediaPlayer that follows the specified MediaPlayerInterface can work.
      */
-    auto speakMediaPlayer = alexaClientSDK::mediaPlayer::MediaPlayer::create();
+    auto speakMediaPlayer = alexaClientSDK::mediaPlayer::MediaPlayer::create(httpContentFetcherFactory);
     if (!speakMediaPlayer) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create media player for speech!");
         return false;
     }
 
-    auto audioMediaPlayer = alexaClientSDK::mediaPlayer::MediaPlayer::create();
+    auto audioMediaPlayer = alexaClientSDK::mediaPlayer::MediaPlayer::create(httpContentFetcherFactory);
     if (!audioMediaPlayer) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create media player for content!");
         return false;
     }
 
-    auto alertsMediaPlayer = alexaClientSDK::mediaPlayer::MediaPlayer::create();
+    auto alertsMediaPlayer = alexaClientSDK::mediaPlayer::MediaPlayer::create(httpContentFetcherFactory);
     if (!alertsMediaPlayer) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create media player for alerts!");
         return false;
     }
 
-    // Creating the alert storage object to be used for rendering and storing alerts. 
+    // Creating the alert storage object to be used for rendering and storing alerts.
     auto alertStorage = std::make_shared<alexaClientSDK::capabilityAgents::alerts::storage::SQLiteAlertStorage>();
+
+    /*
+     * Creating settings storage object to be used for storing <key, value> pairs of AVS Settings.
+     */
+    auto settingsStorage = std::make_shared<alexaClientSDK::capabilityAgents::settings::SQLiteSettingStorage>();
 
     /*
      * Creating the UI component that observes various components and prints to the console accordingly.
@@ -242,8 +249,8 @@ bool SampleApplication::initialize(
      * Creating the AuthDelegate - this component takes care of LWA and authorization of the client. At the moment,
      * this must be done and authorization must be achieved prior to making the call to connect().
      */
-    std::shared_ptr<alexaClientSDK::authDelegate::AuthDelegate> authDelegate = 
-            alexaClientSDK::authDelegate::AuthDelegate::create();
+    std::shared_ptr<alexaClientSDK::authDelegate::AuthDelegate> authDelegate =
+        alexaClientSDK::authDelegate::AuthDelegate::create();
 
     authDelegate->addAuthObserver(connectionObserver);
 
@@ -251,15 +258,16 @@ bool SampleApplication::initialize(
      * Creating the DefaultClient - this component serves as an out-of-box default object that instantiates and "glues"
      * together all the modules.
      */
-    std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client = 
-            alexaClientSDK::defaultClient::DefaultClient::create(
-                    speakMediaPlayer, 
-                    audioMediaPlayer, 
-                    alertsMediaPlayer,
-                    authDelegate, 
-                    alertStorage,
-                    {userInterfaceManager},
-                    {connectionObserver, userInterfaceManager});
+    std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client =
+        alexaClientSDK::defaultClient::DefaultClient::create(
+            speakMediaPlayer,
+            audioMediaPlayer,
+            alertsMediaPlayer,
+            authDelegate,
+            alertStorage,
+            settingsStorage,
+            {userInterfaceManager},
+            {connectionObserver, userInterfaceManager});
 
     if (!client) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create default SDK client!");
@@ -267,7 +275,7 @@ bool SampleApplication::initialize(
     }
 
     /*
-     * TODO: ACSDK-384 Remove the requirement of clients having to wait for authorization before making the connect() 
+     * TODO: ACSDK-384 Remove the requirement of clients having to wait for authorization before making the connect()
      * call.
      */
     if (!connectionObserver->waitFor(
@@ -278,20 +286,22 @@ bool SampleApplication::initialize(
 
     client->connect();
 
-    if (!connectionObserver->waitFor(
-                avsCommon::sdkInterfaces::ConnectionStatusObserverInterface::Status::POST_CONNECTED)) {
+    if (!connectionObserver->waitFor(avsCommon::sdkInterfaces::ConnectionStatusObserverInterface::Status::CONNECTED)) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to connect to AVS!");
         return false;
     }
-
+    // Add userInterfaceManager as observer of locale setting.
+    client->addSettingObserver("locale", userInterfaceManager);
+    // Send default settings set by the user to AVS.
+    client->sendDefaultSettings();
     /*
      * Creating the buffer (Shared Data Stream) that will hold user audio data. This is the main input into the SDK.
      */
     size_t bufferSize = alexaClientSDK::avsCommon::avs::AudioInputStream::calculateBufferSize(
-            BUFFER_SIZE_IN_SAMPLES, WORD_SIZE, MAX_READERS);
+        BUFFER_SIZE_IN_SAMPLES, WORD_SIZE, MAX_READERS);
     auto buffer = std::make_shared<alexaClientSDK::avsCommon::avs::AudioInputStream::Buffer>(bufferSize);
-    std::shared_ptr<alexaClientSDK::avsCommon::avs::AudioInputStream> sharedDataStream = 
-            alexaClientSDK::avsCommon::avs::AudioInputStream::create(buffer, WORD_SIZE, MAX_READERS);
+    std::shared_ptr<alexaClientSDK::avsCommon::avs::AudioInputStream> sharedDataStream =
+        alexaClientSDK::avsCommon::avs::AudioInputStream::create(buffer, WORD_SIZE, MAX_READERS);
 
     if (!sharedDataStream) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create shared data stream!");
@@ -317,12 +327,12 @@ bool SampleApplication::initialize(
     bool tapCanBeOverridden = true;
 
     alexaClientSDK::capabilityAgents::aip::AudioProvider tapToTalkAudioProvider(
-            sharedDataStream,
-            compatibleAudioFormat,
-            alexaClientSDK::capabilityAgents::aip::ASRProfile::NEAR_FIELD, 
-            tapAlwaysReadable, 
-            tapCanOverride, 
-            tapCanBeOverridden);
+        sharedDataStream,
+        compatibleAudioFormat,
+        alexaClientSDK::capabilityAgents::aip::ASRProfile::NEAR_FIELD,
+        tapAlwaysReadable,
+        tapCanOverride,
+        tapCanBeOverridden);
 
     // Creating hold to talk audio provider
     bool holdAlwaysReadable = false;
@@ -344,33 +354,33 @@ bool SampleApplication::initialize(
         return false;
     }
 
-    // Creating wake word audio provider, if necessary
+// Creating wake word audio provider, if necessary
 #ifdef KWD
     bool wakeAlwaysReadable = true;
     bool wakeCanOverride = false;
     bool wakeCanBeOverridden = true;
 
     alexaClientSDK::capabilityAgents::aip::AudioProvider wakeWordAudioProvider(
-            sharedDataStream,
-            compatibleAudioFormat,
-            alexaClientSDK::capabilityAgents::aip::ASRProfile::NEAR_FIELD, 
-            wakeAlwaysReadable, 
-            wakeCanOverride, 
-            wakeCanBeOverridden);
+        sharedDataStream,
+        compatibleAudioFormat,
+        alexaClientSDK::capabilityAgents::aip::ASRProfile::NEAR_FIELD,
+        wakeAlwaysReadable,
+        wakeCanOverride,
+        wakeCanBeOverridden);
 
     // This observer is notified any time a keyword is detected and notifies the DefaultClient to start recognizing.
     auto keywordObserver = std::make_shared<alexaClientSDK::sampleApp::KeywordObserver>(client, wakeWordAudioProvider);
 #if defined(KWD_KITTAI)
     m_keywordDetector = alexaClientSDK::kwd::KittAiKeyWordDetector::create(
-            sharedDataStream,
-            compatibleAudioFormat,
-            {keywordObserver},
-            std::unordered_set<
-                    std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(),
-            pathToInputFolder + "/common.res",
-            {{pathToInputFolder + "/alexa.umdl", "ALEXA", KITT_AI_SENSITIVITY}},
-            KITT_AI_AUDIO_GAIN,
-            KITT_AI_APPLY_FRONT_END_PROCESSING);
+        sharedDataStream,
+        compatibleAudioFormat,
+        {keywordObserver},
+        std::unordered_set<
+            std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(),
+        pathToInputFolder + "/common.res",
+        {{pathToInputFolder + "/alexa.umdl", "ALEXA", KITT_AI_SENSITIVITY}},
+        KITT_AI_AUDIO_GAIN,
+        KITT_AI_APPLY_FRONT_END_PROCESSING);
     if (!m_keywordDetector) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create KittAiKeywWordDetector!");
         return false;
@@ -381,7 +391,7 @@ bool SampleApplication::initialize(
         compatibleAudioFormat,
         {keywordObserver},
         std::unordered_set<
-                std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(),
+            std::shared_ptr<alexaClientSDK::avsCommon::sdkInterfaces::KeyWordDetectorStateObserverInterface>>(),
         pathToInputFolder + "/spot-alexa-rpi-31000.snsr");
     if (!m_keywordDetector) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create SensoryKeywWordDetector!");
@@ -406,21 +416,17 @@ bool SampleApplication::initialize(
 
     // If wake word is enabled, then creating the interaction manager with a wake word audio provider.
     auto interactionManager = std::make_shared<alexaClientSDK::sampleApp::InteractionManager>(
-            client, 
-            micWrapper,
-            userInterfaceManager,
-            holdToTalkAudioProvider, 
-            tapToTalkAudioProvider, 
-            wakeWordAudioProvider);
+        client,
+        micWrapper,
+        userInterfaceManager,
+        holdToTalkAudioProvider,
+        tapToTalkAudioProvider,
+        wakeWordAudioProvider);
 
 #else
     // If wake word is not enabled, then creating the interaction manager without a wake word audio provider.
     auto interactionManager = std::make_shared<alexaClientSDK::sampleApp::InteractionManager>(
-            client, 
-            micWrapper,
-            userInterfaceManager,
-            holdToTalkAudioProvider, 
-            tapToTalkAudioProvider);
+        client, micWrapper, userInterfaceManager, holdToTalkAudioProvider, tapToTalkAudioProvider);
 #endif
 
     // Creating the input observer.
@@ -441,5 +447,5 @@ bool SampleApplication::initialize(
     return true;
 }
 
-} // namespace sampleApp
-} // namespace alexaClientSDK
+}  // namespace sampleApp
+}  // namespace alexaClientSDK

@@ -29,6 +29,15 @@ static const char QUIT = 'q';
 static const char INFO = 'i';
 static const char MIC_TOGGLE = 'm';
 static const char STOP = 's';
+static const char PLAY = '1';
+static const char PAUSE = '2';
+static const char NEXT = '3';
+static const char PREVIOUS = '4';
+static const char SETTINGS = 'c';
+
+enum class SettingsValues : char { LOCALE = '1' };
+
+static const std::unordered_map<char, std::string> LOCALE_VALUES({{'1', "en-US"}, {'2', "en-GB"}, {'3', "de-DE"}});
 
 std::unique_ptr<UserInputManager> UserInputManager::create(std::shared_ptr<InteractionManager> interactionManager) {
     if (!interactionManager) {
@@ -38,8 +47,8 @@ std::unique_ptr<UserInputManager> UserInputManager::create(std::shared_ptr<Inter
     return std::unique_ptr<UserInputManager>(new UserInputManager(interactionManager));
 }
 
-UserInputManager::UserInputManager(std::shared_ptr<InteractionManager> interactionManager) : 
-        m_interactionManager{interactionManager} { 
+UserInputManager::UserInputManager(std::shared_ptr<InteractionManager> interactionManager) :
+        m_interactionManager{interactionManager} {
 }
 
 void UserInputManager::setMode(const string& rmode) {
@@ -52,6 +61,7 @@ void UserInputManager::run() {
     if (!m_interactionManager) {
         return;
     }
+
     m_interactionManager->begin(menuMode);
     while(true) {
         if (menuMode == "front") {
@@ -77,5 +87,5 @@ void UserInputManager::run() {
     }
 }
 
-} // namespace sampleApp
-} // namespace alexaClientSDK
+}  // namespace sampleApp
+}  // namespace alexaClientSDK
