@@ -80,6 +80,37 @@ void UserInputManager::run() {
                 m_interactionManager->tap();
             } else if (x == STOP) {
                 m_interactionManager->stopForegroundActivity();
+            } else if (x == PLAY) {
+                m_interactionManager->playbackPlay();
+            } else if (x == PAUSE) {
+                m_interactionManager->playbackPause();
+            } else if (x == NEXT) {
+                m_interactionManager->playbackNext();
+            } else if (x == PREVIOUS) {
+                m_interactionManager->playbackPrevious();
+            } else if (x == SETTINGS) {
+                m_interactionManager->settings();
+                char y;
+                std::cin >> y;
+                // Check the Setting which has to be changed.
+                switch (y) {
+                    case (char)SettingsValues::LOCALE: {
+                        char localeValue;
+                        m_interactionManager->locale();
+                        std::cin >> localeValue;
+                        auto searchLocale = LOCALE_VALUES.find(localeValue);
+                        if (searchLocale != LOCALE_VALUES.end()) {
+                            m_interactionManager->changeSetting("locale", searchLocale->second);
+                        } else {
+                            m_interactionManager->errorValue();
+                        }
+                        break;
+                    }
+                    default:
+                        m_interactionManager->errorValue();
+                        break;
+                }
+                m_interactionManager->help();
             }
         } else {
             sleep(10);
