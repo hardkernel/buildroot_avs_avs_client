@@ -348,7 +348,7 @@ void setup_DSP() {
     }
     printf("[DSP Using library '%s'\n", pAwelib->GetLibraryVersion());
 
-    const char* file = "AMLogic_VUI_Solution_v6a_VoiceOnly_release.awb";
+    const char* file = "AMLogic_VUI_Solution_Model.awb";
     // Only load a layout if asked.
     error = pAwelib->LoadAwbFile(file);
     if (error < 0) {

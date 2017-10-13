@@ -3,12 +3,12 @@
  *		Target Tuning Symbol File
  *		-------------------------
  *
- *          Generated on:  25-Aug-2017 15:47:30
+ *          Generated on:  03-Oct-2017 17:57:17
  *
  ***************************************************************************/
 
-#ifndef AMLOGIC_VUI_SOLUTION_V6A_VOICEONLY_RELEASESIMPLE_H
-#define AMLOGIC_VUI_SOLUTION_V6A_VOICEONLY_RELEASESIMPLE_H
+#ifndef AMLOGIC_VUI_SOLUTION_V8F_VOICEONLY_1HOURSIMPLE_H
+#define AMLOGIC_VUI_SOLUTION_V8F_VOICEONLY_1HOURSIMPLE_H
 
 // ----------------------------------------------------------------------
 // InputMeter [Meter]
@@ -91,18 +91,6 @@
 
 
 // ----------------------------------------------------------------------
-// FreqDomainProcessing.Direction [SinkInt]
-// Copies the data at the input pin and stores it in an internal buffer
-
-#define AWE_FreqDomainProcessing____Direction_ID 30009
-
-// int value[1] - Captured values
-#define AWE_FreqDomainProcessing____Direction_value_OFFSET 8
-#define AWE_FreqDomainProcessing____Direction_value_MASK 0x00000100
-#define AWE_FreqDomainProcessing____Direction_value_SIZE 1
-
-
-// ----------------------------------------------------------------------
 // FreqDomainProcessing.NoiseReductionDB [Sink]
 // Copies the data at the input pin and stores it in an internal buffer.
 
@@ -127,6 +115,18 @@
 #define AWE_FreqDomainProcessing____NoiseReductionDB_yRange_OFFSET 10
 #define AWE_FreqDomainProcessing____NoiseReductionDB_yRange_MASK 0x00000400
 #define AWE_FreqDomainProcessing____NoiseReductionDB_yRange_SIZE 2
+
+
+// ----------------------------------------------------------------------
+// FreqDomainProcessing.Direction [SinkInt]
+// Copies the data at the input pin and stores it in an internal buffer
+
+#define AWE_FreqDomainProcessing____Direction_ID 30009
+
+// int value[1] - Captured values
+#define AWE_FreqDomainProcessing____Direction_value_OFFSET 8
+#define AWE_FreqDomainProcessing____Direction_value_MASK 0x00000100
+#define AWE_FreqDomainProcessing____Direction_value_SIZE 1
 
 
 // ----------------------------------------------------------------------
@@ -165,42 +165,6 @@
 
 
 // ----------------------------------------------------------------------
-// AEC_Out_Delay [Delay]
-// Time delay in which the delay is specified in samples
-
-#define AWE_AEC_Out_Delay_ID 30004
-
-// int maxDelay - Maximum delay, in samples. The size of the delay
-//         buffer is (maxDelay+1)*numChannels.
-#define AWE_AEC_Out_Delay_maxDelay_OFFSET 8
-#define AWE_AEC_Out_Delay_maxDelay_MASK 0x00000100
-#define AWE_AEC_Out_Delay_maxDelay_SIZE -1
-
-// int currentDelay - Current delay.
-// Default value: 0
-// Range: 0 to 16000.  Step size = 1
-#define AWE_AEC_Out_Delay_currentDelay_OFFSET 9
-#define AWE_AEC_Out_Delay_currentDelay_MASK 0x00000200
-#define AWE_AEC_Out_Delay_currentDelay_SIZE -1
-
-// int stateIndex - Index of the oldest state variable in the array of
-//         state variables.
-#define AWE_AEC_Out_Delay_stateIndex_OFFSET 10
-#define AWE_AEC_Out_Delay_stateIndex_MASK 0x00000400
-#define AWE_AEC_Out_Delay_stateIndex_SIZE -1
-
-// int stateHeap - Heap in which to allocate memory.
-#define AWE_AEC_Out_Delay_stateHeap_OFFSET 11
-#define AWE_AEC_Out_Delay_stateHeap_MASK 0x00000800
-#define AWE_AEC_Out_Delay_stateHeap_SIZE -1
-
-// float state[16258] - State variable array.
-#define AWE_AEC_Out_Delay_state_OFFSET 12
-#define AWE_AEC_Out_Delay_state_MASK 0x00001000
-#define AWE_AEC_Out_Delay_state_SIZE 16258
-
-
-// ----------------------------------------------------------------------
 // endIndex [SinkInt]
 // Copies the data at the input pin and stores it in an internal buffer
 
@@ -210,18 +174,6 @@
 #define AWE_endIndex_value_OFFSET 8
 #define AWE_endIndex_value_MASK 0x00000100
 #define AWE_endIndex_value_SIZE 1
-
-
-// ----------------------------------------------------------------------
-// LatencyPeak [SinkInt]
-// Copies the data at the input pin and stores it in an internal buffer
-
-#define AWE_LatencyPeak_ID 30002
-
-// int value[1] - Captured values
-#define AWE_LatencyPeak_value_OFFSET 8
-#define AWE_LatencyPeak_value_MASK 0x00000100
-#define AWE_LatencyPeak_value_SIZE 1
 
 
 // ----------------------------------------------------------------------
@@ -237,6 +189,18 @@
 
 
 // ----------------------------------------------------------------------
+// startIndex [SinkInt]
+// Copies the data at the input pin and stores it in an internal buffer
+
+#define AWE_startIndex_ID 30011
+
+// int value[1] - Captured values
+#define AWE_startIndex_value_OFFSET 8
+#define AWE_startIndex_value_MASK 0x00000100
+#define AWE_startIndex_value_SIZE 1
+
+
+// ----------------------------------------------------------------------
 // VR_State [SourceInt]
 // Source buffer holding 1 wire of integer data
 
@@ -249,6 +213,42 @@
 #define AWE_VR_State_value_OFFSET 8
 #define AWE_VR_State_value_MASK 0x00000100
 #define AWE_VR_State_value_SIZE 1
+
+
+// ----------------------------------------------------------------------
+// AEC_Out_Delay [Delay]
+// Time delay in which the delay is specified in samples
+
+#define AWE_AEC_Out_Delay_ID 30004
+
+// int maxDelay - Maximum delay, in samples. The size of the delay
+//         buffer is (maxDelay+1)*numChannels.
+#define AWE_AEC_Out_Delay_maxDelay_OFFSET 8
+#define AWE_AEC_Out_Delay_maxDelay_MASK 0x00000100
+#define AWE_AEC_Out_Delay_maxDelay_SIZE -1
+
+// int currentDelay - Current delay.
+// Default value: 31
+// Range: 0 to 130.  Step size = 1
+#define AWE_AEC_Out_Delay_currentDelay_OFFSET 9
+#define AWE_AEC_Out_Delay_currentDelay_MASK 0x00000200
+#define AWE_AEC_Out_Delay_currentDelay_SIZE -1
+
+// int stateIndex - Index of the oldest state variable in the array of
+//         state variables.
+#define AWE_AEC_Out_Delay_stateIndex_OFFSET 10
+#define AWE_AEC_Out_Delay_stateIndex_MASK 0x00000400
+#define AWE_AEC_Out_Delay_stateIndex_SIZE -1
+
+// int stateHeap - Heap in which to allocate memory.
+#define AWE_AEC_Out_Delay_stateHeap_OFFSET 11
+#define AWE_AEC_Out_Delay_stateHeap_MASK 0x00000800
+#define AWE_AEC_Out_Delay_stateHeap_SIZE -1
+
+// float state[133] - State variable array.
+#define AWE_AEC_Out_Delay_state_OFFSET 12
+#define AWE_AEC_Out_Delay_state_MASK 0x00001000
+#define AWE_AEC_Out_Delay_state_SIZE 133
 
 
 // ----------------------------------------------------------------------
@@ -295,18 +295,6 @@
 #define AWE_OutputMeter_value_SIZE 2
 
 
-// ----------------------------------------------------------------------
-// startIndex [SinkInt]
-// Copies the data at the input pin and stores it in an internal buffer
 
-#define AWE_startIndex_ID 30011
-
-// int value[1] - Captured values
-#define AWE_startIndex_value_OFFSET 8
-#define AWE_startIndex_value_MASK 0x00000100
-#define AWE_startIndex_value_SIZE 1
-
-
-
-#endif // AMLOGIC_VUI_SOLUTION_V6A_VOICEONLY_RELEASESIMPLE_H
+#endif // AMLOGIC_VUI_SOLUTION_V8F_VOICEONLY_1HOURSIMPLE_H
 

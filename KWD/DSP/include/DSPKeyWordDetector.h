@@ -15,7 +15,7 @@
 #include "KWD/AbstractKeywordDetector.h"
 
 #include "awelib.h"
-#include "AMLogic_VUI_Solution_v6a_VoiceOnly_releaseSimple.h"
+#include "AMLogic_VUI_Solution_Model.h"
 #include "TcpIO2.h"
 
 namespace alexaClientSDK {
