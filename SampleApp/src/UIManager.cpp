@@ -97,7 +97,7 @@ static struct leds state[]={
     {2,1,9,0,_RED,_POSITIVE,_MOVE},
     {6,1,8,0,_RED,_SKIP,_STATIC},
     {0,0,0,0,_RED,_SKIP,_OTHER},
-    {6,1,6,0,_RED,_SKIP,_STATIC},
+    {1,1,1,0,_RED,_POSITIVE,_MOVE},
 };
 
 void UIManager::onDialogUXStateChanged(DialogUXState state) {

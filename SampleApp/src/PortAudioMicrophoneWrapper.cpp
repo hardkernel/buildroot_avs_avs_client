@@ -18,8 +18,17 @@
 #include "SampleApp/PortAudioMicrophoneWrapper.h"
 #include "SampleApp/ConsolePrinter.h"
 #include "AIP/AudioInputProcessor.h"
+#include <AVSCommon/AVS/MessageRequest.h>
+#include <AVSCommon/Utils/File/FileUtils.h>
+#include <AVSCommon/Utils/JSON/JSONUtils.h>
+#include <AVSCommon/Utils/Timing/TimeUtils.h>
+#include <AVSCommon/Utils/Configuration/ConfigurationNode.h>
 
 #include <alsa/asoundlib.h>
+
+#include <gst/gst.h>
+#include <glib.h>
+
 
 namespace alexaClientSDK {
 namespace sampleApp {
@@ -34,7 +43,9 @@ static const double SAMPLE_RATE = 48000;
 static const unsigned long PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP = 768;
 static const unsigned long PREFERRED_SAMPLES_PER_CALLBACK_FOR_ALSA = 256;
 static const unsigned long RING_BUFFER_SIZE = PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP * NUM_INPUT_CHANNELS * 30;
-
+static const std::string MUTE_CAPABILITY_AGENT_CONFIGURATION_ROOT_KEY = "alertsCapabilityAgent";
+static const std::string MUTE_CAPABILITY_AGENT_AUDIO_ON_FILE_PATH_KEY = "muteOnSoundFilePath";
+static const std::string MUTE_CAPABILITY_AGENT_AUDIO_OFF_FILE_PATH_KEY = "muteOffSoundFilePath";
 int prev_state  = 0;
 std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> PortAudioMicrophoneWrapper::m_client;
 void (*PortAudioMicrophoneWrapper::call_notifier)(uint64_t startIndex , uint64_t endIndex);
@@ -401,6 +412,7 @@ void setup_DSP() {
 std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
         std::shared_ptr<AudioInputStream> stream , void(*fp)(uint64_t startIndex , uint64_t endIndex),
         std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client) {
+
     if (!stream) {
         ConsolePrinter::simplePrint("Invalid stream passed to PortAudioMicrophoneWrapper");
         return nullptr;
@@ -421,12 +433,124 @@ std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
     fp_input = fopen("input.bin" , "wb");
     fp_output = fopen("output.bin" , "wb");
 #endif
+    portAudioMicrophoneWrapper->key_mute_sound_init();
 
     return portAudioMicrophoneWrapper;
 }
 
+
+static gboolean mute_play_state(GstBus * bus, GstMessage * msg, gpointer data)
+{
+    GMainLoop *loop = (GMainLoop *) data;
+
+    switch (GST_MESSAGE_TYPE(msg)) {
+    case GST_MESSAGE_EOS:
+        //g_print("End of mute stream\n");
+        g_main_loop_quit(loop);
+    break;
+    case GST_MESSAGE_ERROR:
+        {
+            gchar *debug;
+            GError *error;
+            gst_message_parse_error(msg, &error, &debug);
+            g_free(debug);
+            g_printerr("ERROR:%s\n", error->message);
+            g_error_free(error);
+            g_main_loop_quit(loop);
+        }
+    break;
+    default:
+    break;
+    }
+    return TRUE;
+}
+
+void PortAudioMicrophoneWrapper::key_mute_sound_thread() {
+    GMainLoop *loop;
+    GstElement *pipeline, *source, *decoder, *sink;
+    GstBus *bus;
+    const char* audioPath;
+    gst_init(NULL, NULL);
+    loop = g_main_loop_new(NULL, FALSE);
+    printf("key_mute_sound_thread.....start!\n");
+    while (1) {
+       if (true == mute_sound_flag) {
+           if (mic_mute_flag)
+               audioPath = muteOnAudioFilePath.c_str();
+           else
+               audioPath = muteOffAudioFilePath.c_str();
+
+    //printf("@@@@audioPath:%s\n",audioPath);
+
+    pipeline = gst_pipeline_new("audio-player");
+    source = gst_element_factory_make("filesrc", "file-source");
+    decoder = gst_element_factory_make("mad", "mad-decoder");
+    sink = gst_element_factory_make("autoaudiosink", "audio-output");
+
+    if (!pipeline || !source || !decoder || !sink) {
+        g_printerr("One element could not be created.Exiting.\n");
+        return;
+    }
+
+    g_object_set(G_OBJECT(source), "location", audioPath, NULL);
+    bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
+    gst_bus_add_watch(bus, mute_play_state, loop);
+    gst_object_unref(bus);
+    gst_bin_add_many(GST_BIN(pipeline), source, decoder, sink, NULL);
+    gst_element_link_many(source, decoder, sink, NULL);
+    gst_element_set_state(pipeline, GST_STATE_PLAYING);
+    //g_print("Running\n");
+    g_main_loop_run(loop);
+    //g_print("Returned,stopping playback\n");
+    gst_element_set_state(pipeline, GST_STATE_NULL);
+    gst_object_unref(GST_OBJECT(pipeline));
+    mute_sound_flag=false;
+    } else usleep(1000*500);
+    }
+    printf("key_mute_sound_threadi exit.....exit!\n");
+}
+
+bool PortAudioMicrophoneWrapper::key_mute_sound_init() {
+    GMainLoop *loop;
+    GstElement *pipeline, *source, *decoder, *sink;
+    GstBus *bus;
+    int par_num = 2;
+
+    auto configurationRoot = avsCommon::utils::configuration::ConfigurationNode::getRoot()[MUTE_CAPABILITY_AGENT_CONFIGURATION_ROOT_KEY];
+    if (!configurationRoot) {
+        printf("could not load AlertsCapabilityAgent configuration root.\n");
+        return false;
+    }
+
+    if (!configurationRoot.getString(MUTE_CAPABILITY_AGENT_AUDIO_ON_FILE_PATH_KEY, &muteOnAudioFilePath) ||
+        muteOnAudioFilePath.empty()) {
+        printf("could not read mute On audio file path.\n");
+        return false;
+    }
+    if (!avsCommon::utils::file::fileExists(muteOnAudioFilePath)) {
+        printf("could not open mute on audio file.");
+        return false;
+    }
+
+    if (!configurationRoot.getString(MUTE_CAPABILITY_AGENT_AUDIO_OFF_FILE_PATH_KEY, &muteOffAudioFilePath) ||
+        muteOffAudioFilePath.empty()) {
+        printf("could not read mute Off audio file path.\n");
+        return false;
+    }
+    if (!avsCommon::utils::file::fileExists(muteOffAudioFilePath)) {
+        printf("could not open mute off audio file.");
+        return false;
+    }
+
+    mute_sound_flag = false;
+
+    p_mute_thread = std::thread (&PortAudioMicrophoneWrapper::key_mute_sound_thread,this);
+
+    return true;
+}
+
 PortAudioMicrophoneWrapper::PortAudioMicrophoneWrapper(std::shared_ptr<AudioInputStream> stream):
-        m_audioInputStream{stream}, m_paStream{nullptr} {
+        m_audioInputStream{stream}, m_paStream{nullptr}, mic_mute_flag{true} {
 
 #if DSP_DEBUG == 1
     debug_pcm_write = std::thread(&PortAudioMicrophoneWrapper::do_debug_pcm_write ,this);
@@ -483,22 +607,32 @@ bool PortAudioMicrophoneWrapper::initialize() {
 }
 
 bool PortAudioMicrophoneWrapper::startStreamingMicrophoneData() {
+    printf("startStreamingMicrophoneData\n");
+    mic_mute_flag = true;
+    mute_sound_flag = true;
+#if 0
     std::lock_guard<std::mutex> lock{m_mutex};
     PaError err = Pa_StartStream(m_paStream);
     if (err != paNoError) {
         ConsolePrinter::simplePrint("Failed to start PortAudio stream");
         return false;
     }
+#endif
     return true;
 }
 
 bool PortAudioMicrophoneWrapper::stopStreamingMicrophoneData() {
+    printf("stopStreamingMicrophoneData\n");
+    mic_mute_flag = false;
+    mute_sound_flag = true;
+#if 0
     std::lock_guard<std::mutex> lock{m_mutex};
     PaError err = Pa_StopStream(m_paStream);
     if (err != paNoError) {
         ConsolePrinter::simplePrint("Failed to stop PortAudio stream");
         return false;
     }
+#endif
     return true;
 }
 
@@ -816,9 +950,10 @@ void PortAudioMicrophoneWrapper::do_pcm_read() {
             printf(" OVERFLOW \n");
         }
 
-        memcpy(&ring_buffer[wp] , (int*)buffer , READ_FRAME*4*NUM_INPUT_CHANNELS);
-
-        wp = wp + READ_FRAME*NUM_INPUT_CHANNELS;
+        if (mic_mute_flag) {
+            memcpy(&ring_buffer[wp] , (int*)buffer , READ_FRAME*4*NUM_INPUT_CHANNELS);
+            wp = wp + READ_FRAME*NUM_INPUT_CHANNELS;
+        }
 
         if (wp > (int)RING_BUFFER_SIZE)
             printf(" wp out of bounds \n");

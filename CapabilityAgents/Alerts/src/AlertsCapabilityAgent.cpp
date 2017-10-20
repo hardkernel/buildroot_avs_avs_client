@@ -25,6 +25,7 @@
 #include <AVSCommon/Utils/File/FileUtils.h>
 #include <AVSCommon/Utils/JSON/JSONUtils.h>
 #include <AVSCommon/Utils/Timing/TimeUtils.h>
+#include <AVSCommon/Utils/Configuration/ConfigurationNode.h>
 
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>

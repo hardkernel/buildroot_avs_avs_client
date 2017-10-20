@@ -74,6 +74,17 @@ public:
     std::thread pcm_read_thread;
     void do_pcm_read();
 
+    /// The Mic on/off flag
+    bool mic_mute_flag;
+
+    /// The Mic on/off sound thread
+    bool key_mute_sound_init();
+    std::thread p_mute_thread;
+    void key_mute_sound_thread();
+    bool mute_sound_flag;
+
+    std::string muteOnAudioFilePath;
+    std::string muteOffAudioFilePath;
 private:
     /**
      * Constructor.

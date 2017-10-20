@@ -92,7 +92,7 @@ void InteractionManager::microphoneToggle() {
             m_userInterface->microphoneOff();
         } else {
             m_isMicOn = true;
-            //m_micWrapper->startStreamingMicrophoneData();
+            m_micWrapper->startStreamingMicrophoneData();
             m_userInterface->microphoneOn();
         }
     });
