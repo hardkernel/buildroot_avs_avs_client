@@ -4,8 +4,9 @@
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 # Disallow out-of-source-builds.
+if(NOT BUILD_OUT_OF_TREE)
 include(DisallowOutOfSourceBuilds)
-
+endif()
 # Setup default build options, like compiler flags and build type.
 include(BuildOptions)
 

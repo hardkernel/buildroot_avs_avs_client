@@ -44,14 +44,17 @@ endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_link_libraries(SampleApp
-        "-framework CoreAudio" 
-        "-framework AudioToolbox" 
-        "-framework AudioUnit" 
-        "-framework CoreServices" 
+        "-framework CoreAudio"
+        "-framework AudioToolbox"
+        "-framework AudioUnit"
+        "-framework CoreServices"
         "-framework Carbon")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(SampleApp
         rt m pthread asound)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    message(FATAL_ERROR "Windows is unsupported at the moment")  
+    message(FATAL_ERROR "Windows is unsupported at the moment")
 endif()
+#install target
+install(TARGETS     SampleApp
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
