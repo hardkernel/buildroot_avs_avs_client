@@ -284,22 +284,7 @@ bool MediaPlayer::setupPipeline() {
         return false;
     }
 
-    m_pipeline.resampler = gst_element_factory_make("audioresample", "resampler");
-    if (!m_pipeline.resampler) {
-        ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createResamplerElementFailed"));
-        return false;
-    }
-
-    m_pipeline.caps = gst_caps_new_simple("audio/x-raw",
-               "rate", G_TYPE_INT, 48000,
-               "format" , G_TYPE_STRING , "S32LE" , NULL);
-    if (!m_pipeline.caps) {
-        ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createCapFailed"));
-        return false;
-    }
-
-    m_pipeline.audioSink = gst_element_factory_make("alsasink", "audio_sink");
-    g_object_set(G_OBJECT(m_pipeline.audioSink) , "device" , "2to2" , NULL);
+    m_pipeline.audioSink = gst_element_factory_make("autoaudiosink", "audio_sink");
     if (!m_pipeline.audioSink) {
         ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createAudioSinkElementFailed"));
         return false;
@@ -316,14 +301,10 @@ bool MediaPlayer::setupPipeline() {
     gst_object_unref(bus);
 
     // Link only the converter and sink here. Src will be linked in respective source files.
-    gst_bin_add_many(GST_BIN(m_pipeline.pipeline), m_pipeline.converter, m_pipeline.resampler, m_pipeline.audioSink, nullptr);
-    if (!gst_element_link(m_pipeline.converter,m_pipeline.resampler)) {
-        ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createConvertertoResamplerFailed"));
-        return false;
-    }
+    gst_bin_add_many(GST_BIN(m_pipeline.pipeline), m_pipeline.converter, m_pipeline.audioSink, nullptr);
 
-    if (!gst_element_link_filtered(m_pipeline.resampler, m_pipeline.audioSink,m_pipeline.caps)) {
-        ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createResamplerToSinkFailed"));
+    if (!gst_element_link(m_pipeline.converter, m_pipeline.audioSink)) {
+        ACSDK_ERROR(LX("setupPipelineFailed").d("reason", "createConverterToSinkLinkFailed"));
         return false;
     }
 
