@@ -302,7 +302,7 @@ struct CAWELib
 	 * E_ARGUMENT_ERROR - filename is not valid.
 	 * Others - see Errors.h.
 	 */
-	virtual int LoadAwbFile(const char *filename) = 0;
+	virtual int LoadAwbFile(const char *filename, UINT32 *pPos = 0) = 0;
 
 	/**
 	 * @brief Send a binary command to AWE.

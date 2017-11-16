@@ -349,8 +349,9 @@ void setup_DSP() {
     printf("[DSP Using library '%s'\n", pAwelib->GetLibraryVersion());
 
     const char* file = "AMLogic_VUI_Solution_Model.awb";
+    uint32_t pos;
     // Only load a layout if asked.
-    error = pAwelib->LoadAwbFile(file);
+    error = pAwelib->LoadAwbFile(file , &pos);
     if (error < 0) {
         printf("[DSP] LoadAwbFile failed with %d(%s)\n", error, file);
         delete pAwelib;
