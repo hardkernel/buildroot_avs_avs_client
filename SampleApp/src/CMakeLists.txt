@@ -5,6 +5,7 @@ add_executable(SampleApp
     UserInputManager.cpp
     UserInputKeyManager.cpp
     ConsolePrinter.cpp
+    GuiRenderer.cpp
     UIManager.cpp
     KeywordObserver.cpp
     ConnectionObserver.cpp

@@ -22,6 +22,8 @@
 #include <AVSCommon/SDKInterfaces/ConnectionStatusObserverInterface.h>
 #include <AVSCommon/SDKInterfaces/AuthObserverInterface.h>
 #include <AVSCommon/SDKInterfaces/SingleSettingObserverInterface.h>
+#include <AVSCommon/SDKInterfaces/SpeakerInterface.h>
+#include <AVSCommon/SDKInterfaces/SpeakerManagerObserverInterface.h>
 #include <AVSCommon/Utils/Threading/Executor.h>
 
 #include "ledClient.h"
@@ -36,13 +38,22 @@ namespace sampleApp {
 class UIManager
         : public avsCommon::sdkInterfaces::DialogUXStateObserverInterface
         , public avsCommon::sdkInterfaces::ConnectionStatusObserverInterface
-        , public avsCommon::sdkInterfaces::SingleSettingObserverInterface {
+        , public avsCommon::sdkInterfaces::SingleSettingObserverInterface
+        , public avsCommon::sdkInterfaces::SpeakerManagerObserverInterface {
 public:
     void onDialogUXStateChanged(DialogUXState state) override;
 
     void onConnectionStatusChanged(const Status status, const ChangedReason reason) override;
 
     void onSettingChanged(const std::string& key, const std::string& value) override;
+
+    // @name SpeakerManagerObserverInterface Functions
+    /// @{
+    void onSpeakerSettingsChanged(
+        const avsCommon::sdkInterfaces::SpeakerManagerObserverInterface::Source& source,
+        const avsCommon::sdkInterfaces::SpeakerInterface::Type& type,
+        const avsCommon::sdkInterfaces::SpeakerInterface::SpeakerSettings& settings) override;
+    /// }
 
     /**
     * led ring.
@@ -69,6 +80,16 @@ public:
      * Prints the Locale Options screen.
      */
     void printLocaleScreen();
+
+    /**
+     * Prints the Speaker Control Options screen. This prompts the user to select a @c SpeakerInterface::Type to modify.
+     */
+    void printSpeakerControlScreen();
+
+    /**
+     * Prints the Volume Control Options screen. This gives the user the possible volume control options.
+     */
+    void printVolumeControlScreen();
 
     /**
      * Prints the Error Message for Wrong Input.

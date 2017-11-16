@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     pathToConfig = std::string(argv[1]);
 
     auto sampleApplication =
-        alexaClientSDK::sampleApp::SampleApplication::create(pathToConfig, pathToInputFolder, logLevel,runMode);
+        alexaClientSDK::sampleApp::SampleApplication::create(pathToConfig, pathToInputFolder, logLevel, runMode);
     if (!sampleApplication) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create to SampleApplication!");
         return EXIT_FAILURE;

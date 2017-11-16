@@ -84,9 +84,9 @@
 #define DWORD			unsigned long
 #endif
 
-#ifndef UINT
-#define UINT			unsigned int
-#endif
+//#ifndef UINT
+//#define UINT			unsigned int
+//#endif
 
 #ifndef HIWORD
 #define HIWORD(x)		(((x) >> 16) & 0xffff)
