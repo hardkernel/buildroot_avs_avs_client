@@ -372,7 +372,7 @@ bool SampleApplication::initialize(
             holdCanBeOverridden);
 
     std::shared_ptr<alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper> micWrapper = 
-            alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper::create(sharedDataStream,&notify_detector , client);
+            alexaClientSDK::sampleApp::PortAudioMicrophoneWrapper::create(sharedDataStream,&notify_detector , client , (std::shared_ptr<alexaClientSDK::sampleApp::UIManager>)userInterfaceManager);
     if (!micWrapper) {
         alexaClientSDK::sampleApp::ConsolePrinter::simplePrint("Failed to create PortAudioMicrophoneWrapper!");
         return false;

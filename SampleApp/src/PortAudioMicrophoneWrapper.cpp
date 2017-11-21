@@ -48,6 +48,8 @@ static const std::string MUTE_CAPABILITY_AGENT_AUDIO_ON_FILE_PATH_KEY = "muteOnS
 static const std::string MUTE_CAPABILITY_AGENT_AUDIO_OFF_FILE_PATH_KEY = "muteOffSoundFilePath";
 int prev_state  = 0;
 std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> PortAudioMicrophoneWrapper::m_client;
+std::shared_ptr<alexaClientSDK::sampleApp::UIManager> m_userInterfaceManager =  NULL;
+
 void (*PortAudioMicrophoneWrapper::call_notifier)(uint64_t startIndex , uint64_t endIndex);
 
 #if DUMP_DATA
@@ -412,8 +414,7 @@ void setup_DSP() {
 
 std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
         std::shared_ptr<AudioInputStream> stream , void(*fp)(uint64_t startIndex , uint64_t endIndex),
-        std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client) {
-
+        std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client , std::shared_ptr<alexaClientSDK::sampleApp::UIManager> userInterfaceManager) {
     if (!stream) {
         ConsolePrinter::simplePrint("Invalid stream passed to PortAudioMicrophoneWrapper");
         return nullptr;
@@ -424,6 +425,7 @@ std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
 
     call_notifier = fp;
     m_client = client;
+    m_userInterfaceManager = userInterfaceManager;
 
     if (!portAudioMicrophoneWrapper->initialize()) {
         ConsolePrinter::simplePrint("Failed to initialize PortAudioMicrophoneWrapper");
@@ -768,18 +770,18 @@ void PortAudioMicrophoneWrapper::do_dsp_processing() {
             convert1(&ring_buffer[rp] , &in_samples[0], PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP);
             //fill_write_buffer1(&ring_buffer[rp]);
 
-            AudioInputProcessor::ObserverInterface::State state = m_client->m_audioInputProcessor->getState();
+            int state = (int)m_userInterfaceManager->getState();
             switch (state) {
-                case AudioInputProcessor::ObserverInterface::State::IDLE:
+                case 0 : /*AudioInputProcessor::ObserverInterface::State::IDLE:*/
                     DSP_state.iVal = 0;
                     break;
-                case AudioInputProcessor::ObserverInterface::State::EXPECTING_SPEECH:
+                case 1 : /*AudioInputProcessor::ObserverInterface::State::EXPECTING_SPEECH:*/
                     DSP_state.iVal = 1;
                     break;
-                case AudioInputProcessor::ObserverInterface::State::RECOGNIZING:
+                case 2 : /*AudioInputProcessor::ObserverInterface::State::RECOGNIZING:*/
                     DSP_state.iVal = 2;
                     break;
-                case AudioInputProcessor::ObserverInterface::State::BUSY:
+                case 3 : /*AudioInputProcessor::ObserverInterface::State::BUSY:*/
                     DSP_state.iVal = 3;
             }
 

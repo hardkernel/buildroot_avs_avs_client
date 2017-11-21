@@ -54,8 +54,6 @@ namespace defaultClient {
  */
 class DefaultClient {
 public:
-    /// The audio input processor.
-    std::shared_ptr<capabilityAgents::aip::AudioInputProcessor> m_audioInputProcessor;
     /// A reserved index value which is considered invalid.
     static const auto INVALID_INDEX = capabilityAgents::aip::AudioInputProcessor::INVALID_INDEX;
 
@@ -351,6 +349,8 @@ private:
     /// The certified sender.
     std::shared_ptr<certifiedSender::CertifiedSender> m_certifiedSender;
 
+    /// The audio input processor.
+    std::shared_ptr<capabilityAgents::aip::AudioInputProcessor> m_audioInputProcessor;
 
     /// The speech synthesizer.
     std::shared_ptr<capabilityAgents::speechSynthesizer::SpeechSynthesizer> m_speechSynthesizer;

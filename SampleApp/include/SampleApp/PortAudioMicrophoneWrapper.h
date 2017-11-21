@@ -27,7 +27,7 @@
 
 #include "DSPKeyWordDetector.h"
 #include <DefaultClient/DefaultClient.h>
-
+#include "UIManager.h"
 namespace alexaClientSDK {
 namespace sampleApp {
 
@@ -42,7 +42,7 @@ public:
      */ 
     static std::unique_ptr<PortAudioMicrophoneWrapper> create(
             std::shared_ptr<avsCommon::avs::AudioInputStream> stream, void(*fp)(uint64_t startIndex , uint64_t endIndex),
-			std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client);
+			std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client,std::shared_ptr<alexaClientSDK::sampleApp::UIManager> userInterfaceManager);
 
     /**
      * Stops streaming from the microphone.

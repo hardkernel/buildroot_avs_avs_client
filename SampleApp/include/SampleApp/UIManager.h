@@ -106,6 +106,10 @@ public:
      */
     void microphoneOn();
 
+    DialogUXState getState() {
+        return m_dialogState;
+    }
+
 private:
     /**
      * Prints the current state of Alexa after checking what the appropriate message to display is based on the current
