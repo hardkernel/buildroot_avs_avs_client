@@ -17,8 +17,9 @@ install(PROGRAMS    "${DSP_KEY_WORD_DETECTOR_LIB_PATH}"
         RENAME      "AWELib.so")
 file(GLOB RAWFILES "${AlexaClientSDK_SOURCE_DIR}/KWD/DSP/model/*.raw")
 file(GLOB AWBFILES "${AlexaClientSDK_SOURCE_DIR}/KWD/DSP/model/*.awb")
+file(GLOB EXEFILES "${AlexaClientSDK_SOURCE_DIR}/KWD/DSP/model/*.sh")
 file(GLOB MP3FILES "${AlexaClientSDK_SOURCE_DIR}/Media/*.mp3")
-install(PROGRAMS    ${RAWFILES} ${AWBFILES}
+install(PROGRAMS    ${RAWFILES} ${AWBFILES} ${EXEFILES}
         DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
 install(FILES       ${MP3FILES}
         DESTINATION "${CMAKE_INSTALL_PREFIX}/share/avs")

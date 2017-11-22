@@ -71,13 +71,13 @@ void UserInputManager::run() {
     if (!m_interactionManager) {
         return;
     }
-	
-	if (menuMode == "front") {
-	    while (true) {
-		    sleep(100);
-	    }
+
+    if (menuMode.compare("back") == 0) {
+        while (true) {
+            sleep(1000);
+        }
     }
-	
+
     m_interactionManager->begin(menuMode);
     while (true) {
         char x;
