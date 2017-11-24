@@ -755,6 +755,7 @@ void PortAudioMicrophoneWrapper::do_dsp_processing() {
         std::unique_lock<std::mutex> mlock(rb_mutex);
         rb_cond.wait(mlock);
         level = wp - rp;
+        mlock.unlock();
 
         if (level < 0 ) level = RING_BUFFER_SIZE + level;
         //printf(" do_dsp_processing level %d \n" , level );
