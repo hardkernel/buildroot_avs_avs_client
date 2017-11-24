@@ -42,7 +42,7 @@ public:
      */ 
     static std::unique_ptr<PortAudioMicrophoneWrapper> create(
             std::shared_ptr<avsCommon::avs::AudioInputStream> stream, void(*fp)(uint64_t startIndex , uint64_t endIndex),
-			std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client,std::shared_ptr<alexaClientSDK::sampleApp::UIManager> userInterfaceManager);
+			std::shared_ptr<alexaClientSDK::sampleApp::UIManager> userInterfaceManager);
 
     /**
      * Stops streaming from the microphone.
@@ -63,28 +63,6 @@ public:
      */
     ~PortAudioMicrophoneWrapper();
 
-    static void(*call_notifier)(uint64_t startIndex , uint64_t endIndex);
-    static std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> m_client;
-    std::thread dsp_process;
-    void do_dsp_processing();
-
-    std::thread debug_pcm_write;
-    void do_debug_pcm_write();
-
-    std::thread pcm_read_thread;
-    void do_pcm_read();
-
-    /// The Mic on/off flag
-    bool mic_mute_flag;
-
-    /// The Mic on/off sound thread
-    bool key_mute_sound_init();
-    std::thread p_mute_thread;
-    void key_mute_sound_thread();
-    bool mute_sound_flag;
-
-    std::string muteOnAudioFilePath;
-    std::string muteOffAudioFilePath;
 private:
     /**
      * Constructor.
@@ -129,6 +107,28 @@ private:
      * threads.
      */
     std::mutex m_mutex;
+
+    static void(*call_notifier)(uint64_t startIndex , uint64_t endIndex);
+    std::thread dsp_process;
+    void do_dsp_processing();
+
+    std::thread debug_pcm_write;
+    void do_debug_pcm_write();
+
+    std::thread pcm_read_thread;
+    void do_pcm_read();
+
+    // The Mic on/off flag
+    bool mic_mute_flag;
+    //
+    // The Mic on/off sound thread
+    bool key_mute_sound_init();
+    std::thread p_mute_thread;
+    void key_mute_sound_thread();
+    bool mute_sound_flag;
+
+    std::string muteOnAudioFilePath;
+    std::string muteOffAudioFilePath;
 };
 
 }  // namespace sampleApp

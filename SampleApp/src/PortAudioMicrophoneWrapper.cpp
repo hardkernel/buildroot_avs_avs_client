@@ -47,7 +47,6 @@ static const std::string MUTE_CAPABILITY_AGENT_CONFIGURATION_ROOT_KEY = "alertsC
 static const std::string MUTE_CAPABILITY_AGENT_AUDIO_ON_FILE_PATH_KEY = "muteOnSoundFilePath";
 static const std::string MUTE_CAPABILITY_AGENT_AUDIO_OFF_FILE_PATH_KEY = "muteOffSoundFilePath";
 int prev_state  = 0;
-std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> PortAudioMicrophoneWrapper::m_client;
 std::shared_ptr<alexaClientSDK::sampleApp::UIManager> m_userInterfaceManager =  NULL;
 
 void (*PortAudioMicrophoneWrapper::call_notifier)(uint64_t startIndex , uint64_t endIndex);
@@ -81,6 +80,10 @@ PortAudioMicrophoneWrapper* wrapper;
 #define READ_FRAME 768
 #define BUFFER_SIZE (SAMPLE_RATE/2)
 #define PERIOD_SIZE (BUFFER_SIZE/4)
+
+//lock to sync bwtween pcm reading and dsp processing
+std::mutex rb_mutex;
+std::condition_variable rb_cond;
 
 #define DSP_DEBUG 0
 #define DSP_SOCKET 1
@@ -414,7 +417,7 @@ void setup_DSP() {
 
 std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
         std::shared_ptr<AudioInputStream> stream , void(*fp)(uint64_t startIndex , uint64_t endIndex),
-        std::shared_ptr<alexaClientSDK::defaultClient::DefaultClient> client , std::shared_ptr<alexaClientSDK::sampleApp::UIManager> userInterfaceManager) {
+        std::shared_ptr<alexaClientSDK::sampleApp::UIManager> userInterfaceManager) {
     if (!stream) {
         ConsolePrinter::simplePrint("Invalid stream passed to PortAudioMicrophoneWrapper");
         return nullptr;
@@ -424,7 +427,6 @@ std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
     );
 
     call_notifier = fp;
-    m_client = client;
     m_userInterfaceManager = userInterfaceManager;
 
     if (!portAudioMicrophoneWrapper->initialize()) {
@@ -477,47 +479,43 @@ void PortAudioMicrophoneWrapper::key_mute_sound_thread() {
     loop = g_main_loop_new(NULL, FALSE);
     printf("key_mute_sound_thread.....start!\n");
     while (1) {
-       if (true == mute_sound_flag) {
-           if (mic_mute_flag)
-               audioPath = muteOnAudioFilePath.c_str();
-           else
-               audioPath = muteOffAudioFilePath.c_str();
+        if (true == mute_sound_flag) {
+            if (mic_mute_flag)
+                audioPath = muteOffAudioFilePath.c_str();
+            else
+                audioPath = muteOnAudioFilePath.c_str();
 
-    //printf("@@@@audioPath:%s\n",audioPath);
+            pipeline = gst_pipeline_new("audio-player");
+            source = gst_element_factory_make("filesrc", "file-source");
+            decoder = gst_element_factory_make("mad", "mad-decoder");
+            sink = gst_element_factory_make("autoaudiosink", "audio-output");
 
-    pipeline = gst_pipeline_new("audio-player");
-    source = gst_element_factory_make("filesrc", "file-source");
-    decoder = gst_element_factory_make("mad", "mad-decoder");
-    sink = gst_element_factory_make("autoaudiosink", "audio-output");
+            if (!pipeline || !source || !decoder || !sink) {
+                g_printerr("One element could not be created.Exiting.\n");
+                return;
+            }
 
-    if (!pipeline || !source || !decoder || !sink) {
-        g_printerr("One element could not be created.Exiting.\n");
-        return;
-    }
-
-    g_object_set(G_OBJECT(source), "location", audioPath, NULL);
-    bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
-    gst_bus_add_watch(bus, mute_play_state, loop);
-    gst_object_unref(bus);
-    gst_bin_add_many(GST_BIN(pipeline), source, decoder, sink, NULL);
-    gst_element_link_many(source, decoder, sink, NULL);
-    gst_element_set_state(pipeline, GST_STATE_PLAYING);
-    //g_print("Running\n");
-    g_main_loop_run(loop);
-    //g_print("Returned,stopping playback\n");
-    gst_element_set_state(pipeline, GST_STATE_NULL);
-    gst_object_unref(GST_OBJECT(pipeline));
-    mute_sound_flag=false;
-    } else usleep(1000*500);
+            g_object_set(G_OBJECT(source), "location", audioPath, NULL);
+            bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
+            gst_bus_add_watch(bus, mute_play_state, loop);
+            gst_object_unref(bus);
+            gst_bin_add_many(GST_BIN(pipeline), source, decoder, sink, NULL);
+            gst_element_link_many(source, decoder, sink, NULL);
+            gst_element_set_state(pipeline, GST_STATE_PLAYING);
+            //g_print("Running\n");
+            g_main_loop_run(loop);
+            //g_print("Returned,stopping playback\n");
+            gst_element_set_state(pipeline, GST_STATE_NULL);
+            gst_object_unref(GST_OBJECT(pipeline));
+            mute_sound_flag=false;
+        } else {
+            usleep(1000*500);
+        }
     }
     printf("key_mute_sound_threadi exit.....exit!\n");
 }
 
 bool PortAudioMicrophoneWrapper::key_mute_sound_init() {
-    GMainLoop *loop;
-    GstElement *pipeline, *source, *decoder, *sink;
-    GstBus *bus;
-    int par_num = 2;
 
     auto configurationRoot = avsCommon::utils::configuration::ConfigurationNode::getRoot()[MUTE_CAPABILITY_AGENT_CONFIGURATION_ROOT_KEY];
     if (!configurationRoot) {
@@ -553,7 +551,7 @@ bool PortAudioMicrophoneWrapper::key_mute_sound_init() {
 }
 
 PortAudioMicrophoneWrapper::PortAudioMicrophoneWrapper(std::shared_ptr<AudioInputStream> stream):
-        m_audioInputStream{stream}, m_paStream{nullptr}, mic_mute_flag{true} {
+        m_audioInputStream{stream}, m_paStream{nullptr}, mic_mute_flag{false} {
 
 #if DSP_DEBUG == 1
     debug_pcm_write = std::thread(&PortAudioMicrophoneWrapper::do_debug_pcm_write ,this);
@@ -611,7 +609,7 @@ bool PortAudioMicrophoneWrapper::initialize() {
 
 bool PortAudioMicrophoneWrapper::startStreamingMicrophoneData() {
     printf("startStreamingMicrophoneData\n");
-    mic_mute_flag = true;
+    mic_mute_flag = false;
     mute_sound_flag = true;
 #if 0
     std::lock_guard<std::mutex> lock{m_mutex};
@@ -626,7 +624,7 @@ bool PortAudioMicrophoneWrapper::startStreamingMicrophoneData() {
 
 bool PortAudioMicrophoneWrapper::stopStreamingMicrophoneData() {
     printf("stopStreamingMicrophoneData\n");
-    mic_mute_flag = false;
+    mic_mute_flag = true;
     mute_sound_flag = true;
 #if 0
     std::lock_guard<std::mutex> lock{m_mutex};
@@ -702,17 +700,9 @@ void do_dsp_processing_fn(int* in_samples , int* out_samples , int inCount , int
     Sample retVal;
 
     //printf(" do_dsp_processing_fn \n");
-#if 0
-    memset(&in_samples[0], 0, inCount * sizeof(short));
-
-    //convert to 10 channels , 32 bit input
-    for (UINT32 i = 0 ; i < PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP; i++) {
-        in_samples[i*10] = record_bufffer[i] << 16;
-    }
-#endif
     loopCount += PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP;
     if (loopCount > 16000 * 8) {
-        printf("detection loop heart beat ...\n");
+        //printf("detection loop heart beat ...\n");
         loopCount = 0;
     }
 
@@ -732,7 +722,7 @@ void do_dsp_processing_fn(int* in_samples , int* out_samples , int inCount , int
     fill_write_buffer(&out_samples[0]);
 #endif
     if (error < 0) {
-        printf("[DSP pump of audio failed with %d.\n", error);
+        printf("[DSP pump of audio failed with %d\n", error);
         delete pAwelib;
         exit(1);
     }
@@ -760,12 +750,15 @@ void PortAudioMicrophoneWrapper::do_dsp_processing() {
     wrapper = static_cast<PortAudioMicrophoneWrapper*>(this);
     int detection_count = 0;
 
+    int level;
     while (1) {
+        std::unique_lock<std::mutex> mlock(rb_mutex);
+        rb_cond.wait(mlock);
+        level = wp - rp;
 
-        int level = wp - rp;
         if (level < 0 ) level = RING_BUFFER_SIZE + level;
         //printf(" do_dsp_processing level %d \n" , level );
-        if (level >= (int)PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP*NUM_INPUT_CHANNELS) {
+        while (level >= (int)PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP*NUM_INPUT_CHANNELS) {
 
             convert1(&ring_buffer[rp] , &in_samples[0], PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP);
             //fill_write_buffer1(&ring_buffer[rp]);
@@ -790,8 +783,8 @@ void PortAudioMicrophoneWrapper::do_dsp_processing() {
                 if (ret != 0)
                     printf(" Error from SetValues %d " , ret);
 
-                    //printf(" Switch from state %d to state %d \n" , prev_state , DSP_state.iVal);
-                    prev_state = DSP_state.iVal;
+                //printf(" Switch from state %d to state %d \n" , prev_state , DSP_state.iVal);
+                prev_state = DSP_state.iVal;
             }
 
             do_dsp_processing_fn(&in_samples[0],&out_samples[0],inCount,outCount, result , &startIndex[0] , &endIndex[0] );
@@ -813,18 +806,21 @@ void PortAudioMicrophoneWrapper::do_dsp_processing() {
             if (result == 1) {
                 detection_count++;
                 printf(" wake word detected %d \n" , detection_count);
-                call_notifier(total_samps - startIndex[0].iVal , total_samps - endIndex[0].iVal);
+                call_notifier(total_samps - (uint64_t)startIndex[0].iVal , total_samps - (uint64_t)endIndex[0].iVal);
             }
 
-            rp = rp+ (int)PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP*NUM_INPUT_CHANNELS;
+            rp = rp + (int)PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP*NUM_INPUT_CHANNELS;
             if (rp > (int)RING_BUFFER_SIZE) {
                 printf(" rp out of bound \n");
             }
 
-            if (rp == RING_BUFFER_SIZE)
+            if (rp == RING_BUFFER_SIZE) {
                 rp = 0;
-        } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            }
+            level = wp - rp;
+	    if (level < 0 ) {
+                level = RING_BUFFER_SIZE + level;
+            }
         }
     }
 }
@@ -842,7 +838,7 @@ int PortAudioMicrophoneWrapper::PortAudioCallback(
     if (wp < rp && wp + (int)PREFERRED_SAMPLES_PER_CALLBACK_FOR_ALSA*NUM_INPUT_CHANNELS >= rp ) {
         printf(" OVERFLOW \n");
     }
-    printf(" coming to PortAudioCallback \n");
+    printf("Coming to PortAudioCallback\n");
     memcpy(&ring_buffer[wp] , (int*)inputBuffer , PREFERRED_SAMPLES_PER_CALLBACK_FOR_ALSA*4*NUM_INPUT_CHANNELS);
 
     wp = wp + PREFERRED_SAMPLES_PER_CALLBACK_FOR_ALSA*NUM_INPUT_CHANNELS;
@@ -857,8 +853,6 @@ int PortAudioMicrophoneWrapper::PortAudioCallback(
 }
 
 void PortAudioMicrophoneWrapper::do_pcm_read() {
-    printf(" do pcm read \n");
-
     dsp_process = std::thread (&PortAudioMicrophoneWrapper::do_dsp_processing ,this);
 
     snd_pcm_t *handle;
@@ -931,17 +925,18 @@ void PortAudioMicrophoneWrapper::do_pcm_read() {
         goto error;
     }
 
-    printf(" ready to read \n" );
-
     while (1) {
+        if (mic_mute_flag) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            continue;
+        }
         err = snd_pcm_readi(handle, buffer, READ_FRAME);
         if (err == -EPIPE) printf( "Overrun occurred: %d\n", err);
 
         if (err < 0) {
             err = snd_pcm_recover(handle, err, 0);
             // Still an error, need to exit.
-            if (err < 0)
-            {
+            if (err < 0) {
                 printf( "Error occured while recording: %s\n", snd_strerror(err));
                 goto error;
             }
@@ -950,19 +945,23 @@ void PortAudioMicrophoneWrapper::do_pcm_read() {
         int space = wp - rp;
         if (space <= 0 ) space = space + RING_BUFFER_SIZE;
         if (space < (int)READ_FRAME*NUM_INPUT_CHANNELS) {
-            printf(" OVERFLOW \n");
+            printf("Ringbuffer OVERFLOW \n");
         }
 
-        if (mic_mute_flag) {
-            memcpy(&ring_buffer[wp] , (int*)buffer , READ_FRAME*4*NUM_INPUT_CHANNELS);
-            wp = wp + READ_FRAME*NUM_INPUT_CHANNELS;
+        memcpy(&ring_buffer[wp] , (int*)buffer , READ_FRAME*4*NUM_INPUT_CHANNELS);
+        wp = wp + READ_FRAME*NUM_INPUT_CHANNELS;
+
+        if (wp > (int)RING_BUFFER_SIZE) {
+            printf("RingBuffer wp out of bounds \n");
         }
 
-        if (wp > (int)RING_BUFFER_SIZE)
-            printf(" wp out of bounds \n");
-
-        if (wp == RING_BUFFER_SIZE)
+        if (wp == RING_BUFFER_SIZE) {
             wp = 0;
+        }
+
+        //Wake up DSPC processing thread
+        std::lock_guard<std::mutex> guard(rb_mutex);
+        rb_cond.notify_one();
     }
 
 error:
