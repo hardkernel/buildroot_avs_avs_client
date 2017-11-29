@@ -19,8 +19,9 @@
 #define ALEXA_CLIENT_SDK_SAMPLE_APP_INCLUDE_SAMPLE_APP_USER_INPUT_KEY_MANAGER_H_
 
 #include <memory>
-
 #include "InteractionManager.h"
+
+#include <DisplayCardImpCom.h>
 
 namespace alexaClientSDK {
 namespace sampleApp {
@@ -41,6 +42,11 @@ public:
      */
     void run();
 
+    bool remote_player_key_init();
+    std::thread remote_player_key_thread;
+    void remote_player_key_run_thread();
+
+
 private:
     /**
      * Constructor.
@@ -51,6 +57,7 @@ private:
     std::shared_ptr<InteractionManager> m_interactionManager;
 
     std::shared_ptr<InteractionManager> m_interactionKeyManager;
+
 };
 
 } // namespace sampleApp

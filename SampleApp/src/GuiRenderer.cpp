@@ -51,6 +51,23 @@ static const std::string RENDER_PLAYER_INFO_HEADER =
     "#-----------------------------------------------------------------------------\n";
 
 void GuiRenderer::renderTemplateCard(const std::string& jsonPayload) {
+    int res;
+    const char* m_str;
+    std::string s_str = "{\"directive\":{\"header\":{\"namespace\":\"TemplateRuntime\",\"name\":\"RenderTemplate\"},\"payload\":" ;
+    s_str += jsonPayload ;
+    s_str += "}}" ;
+
+    m_str = s_str.data();
+
+    //ConsolePrinter::simplePrint(jsonPayload);
+
+    res = disp_connection(DISPLAYCARD_SERVER);
+    if (res < 0) printf("disp connection fail!\n");
+    else {
+        res = disp_send((char**)&m_str, DISPCARD_TEMPLATE_METHOD);
+        if (res < 0) printf("disp send fail\n");
+    }
+
     rapidjson::Document payload;
     rapidjson::ParseResult result = payload.Parse(jsonPayload);
     if (!result) {
@@ -89,11 +106,27 @@ void GuiRenderer::renderTemplateCard(const std::string& jsonPayload) {
 void GuiRenderer::renderPlayerInfoCard(
     const std::string& jsonPayload,
     TemplateRuntimeObserverInterface::AudioPlayerInfo info) {
+    int res;
+    const char* m_str;
+    std::string s_str = "{\"directive\":{\"header\":{\"namespace\":\"TemplateRuntime\",\"name\":\"RenderTemplate\"},\"payload\":" ;
+    s_str += jsonPayload ;
+    s_str += "}}" ;
+
+    m_str = s_str.data();
+
+    res = disp_connection(DISPLAYCARD_SERVER);
+    if (res < 0) printf("disp connection fail!\n");
+    else {
+        res = disp_send((char**)&m_str, DISPCARD_PLAYER_METHOD);
+        if (res < 0) printf("disp send fail\n");
+    }
     rapidjson::Document payload;
     rapidjson::ParseResult result = payload.Parse(jsonPayload);
     if (!result) {
         return;
     }
+
+//    ConsolePrinter::simplePrint(jsonPayload);
 
     std::string audioItemId;
     if (!avsCommon::utils::json::jsonUtils::retrieveValue(payload, AUDIO_ITEM_ID_TAG, &audioItemId)) {

@@ -26,7 +26,8 @@
 #include <AVSCommon/SDKInterfaces/SpeakerManagerObserverInterface.h>
 #include <AVSCommon/Utils/Threading/Executor.h>
 
-#include "ledClient.h"
+#include <ledClient.h>
+#include <DisplayCardImpCom.h>
 
 namespace alexaClientSDK {
 namespace sampleApp {

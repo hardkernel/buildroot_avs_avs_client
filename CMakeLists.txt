@@ -31,6 +31,7 @@ endif()
 add_subdirectory("ApplicationUtilities")
 add_subdirectory("SampleApp")
 add_subdirectory("Storage")
+add_subdirectory("DisplayCard")
 add_subdirectory("doc")
 
 # Create .pc pkg-config file

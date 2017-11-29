@@ -121,14 +121,23 @@ static const std::string VOLUME_CONTROL_MESSAGE =
     "+----------------------------------------------------------------------------+\n";
 
 static int ledres = 0;
+static int dispres = 0;
 static int ledstate = -1;
-static struct leds state[]={
+static struct leds state[] = {
     {1,1,9,3,_RED,_POSITIVE,_MOVE},
     {6,1,7,0,_RED,_SKIP,_MOVE},
     {2,1,9,0,_RED,_POSITIVE,_MOVE},
     {6,1,8,0,_RED,_SKIP,_STATIC},
     {0,0,0,0,_RED,_SKIP,_OTHER},
     {1,1,1,0,_RED,_POSITIVE,_MOVE},
+};
+
+static const char* disp_state[] = {
+    "server_state_idle",
+    "server_state_listening",
+    "server_state_thinking",
+    "server_state_speaking",
+    "server_state_finished",
 };
 
 void UIManager::onDialogUXStateChanged(DialogUXState state) {
@@ -242,19 +251,46 @@ void UIManager::printState() {
         switch (m_dialogState) {
             case DialogUXState::IDLE:
                 ledres = ledShow(&state[0]); if (ledres < 0) printf("[%d]ledShow Idle state err!\n", __LINE__);
+
+                dispres = disp_connection(DISPLAYCARD_SERVER);
+                if (dispres < 0) printf("disp connection fail!\n");
+                else {
+                    dispres = disp_send((char**)&disp_state[0], DISPCARD_STATE_METHOD);
+                    if (dispres < 0) printf("disp send fail\n");\
+                }
                 ConsolePrinter::prettyPrint("Alexa is currently idle!");
                 return;
             case DialogUXState::LISTENING:
                 ledres = ledShow(&state[3]); if (ledres < 0) printf("[%d]ledShow Listening state err!\n",__LINE__);
+
+                dispres = disp_connection(DISPLAYCARD_SERVER);
+                if (dispres < 0) printf("disp connection fail!\n");
+                else {
+                    dispres = disp_send((char**)&disp_state[1], DISPCARD_STATE_METHOD);
+                    if (dispres < 0) printf("disp send fail\n");
+                }
                 ConsolePrinter::prettyPrint("Listening...");
                 return;
             case DialogUXState::THINKING:
                 ledres = ledShow(&state[2]); if (ledres < 0) printf("[%d]ledShow Thinking state err!\n",__LINE__);
+                dispres = disp_connection(DISPLAYCARD_SERVER);
+                if (dispres < 0) printf("disp connection fail!\n");
+                else {
+                    dispres = disp_send((char**)&disp_state[2], DISPCARD_STATE_METHOD);
+                    if (dispres < 0) printf("disp send fail\n");
+                }
                 ConsolePrinter::prettyPrint("Thinking...");
                 return;
                 ;
             case DialogUXState::SPEAKING:
                 ledres = ledShow(&state[1]); if (ledres < 0) printf("[%d]ledShow Speaking state err!\n",__LINE__);
+
+                dispres = disp_connection(DISPLAYCARD_SERVER);
+                if (dispres < 0) printf("disp connection fail!\n");
+                else {
+                    dispres = disp_send((char**)&disp_state[3], DISPCARD_STATE_METHOD);
+                    if (dispres < 0) printf("disp send fail\n");
+                }
                 ConsolePrinter::prettyPrint("Speaking...");
                 return;
             /*
@@ -263,6 +299,13 @@ void UIManager::printState() {
              * nothing for this state.
              */
             case DialogUXState::FINISHED:
+
+                //dispres = disp_connection(DISPLAYCARD_SERVER);
+                //if (dispres < 0) printf("disp connection fail!\n");
+
+                //dispres = disp_send((char**)&disp_state[4], DISPCARD_STATE_METHOD);
+                //if (dispres < 0) printf("disp send fail\n");
+
                 return;
         }
     }

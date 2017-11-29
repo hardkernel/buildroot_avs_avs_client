@@ -20,6 +20,8 @@
 
 #include <AVSCommon/SDKInterfaces/TemplateRuntimeObserverInterface.h>
 
+#include <DisplayCardImpCom.h>
+
 namespace alexaClientSDK {
 namespace sampleApp {
 
