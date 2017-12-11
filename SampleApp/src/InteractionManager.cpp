@@ -36,12 +36,10 @@ InteractionManager::InteractionManager(
         m_wakeWordAudioProvider{wakeWordAudioProvider},
         m_isHoldOccurring{false},
         m_isTapOccurring{false},
-		m_runMode{NULL},
-        m_isMicOn{true} {
+        m_isMicOn{true},
+        m_runMode{NULL} {
     m_micWrapper->startStreamingMicrophoneData();
-    auto guiRenderer = std::make_shared<GuiRenderer>();
-    m_client->addTemplateRuntimeObserver(guiRenderer);
-	m_userInterface->led_init();
+    m_userInterface->led_init();
 };
 
 void InteractionManager::begin(const string& showFlag) {
@@ -191,7 +189,7 @@ void InteractionManager::setMute(avsCommon::sdkInterfaces::SpeakerInterface::Typ
 
 void InteractionManager::onDialogUXStateChanged(DialogUXState state) {
     // reset tap-to-talk state
-    if (DialogUXState::IDLE == state) {
+    if (DialogUXState::LISTENING != state) {
         m_isTapOccurring = false;
     }
 }

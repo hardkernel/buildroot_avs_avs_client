@@ -90,7 +90,7 @@ DSPKeyWordDetector::DSPKeyWordDetector(
         std::chrono::milliseconds msToPushPerIteration):
     AbstractKeywordDetector(keyWordObservers, keyWordDetectorStateObservers),
     m_stream{stream},
-    m_maxSamplesPerPush{(audioFormat.sampleRateHz / HERTZ_PER_KILOHERTZ) * msToPushPerIteration.count()} {
+    m_maxSamplesPerPush((audioFormat.sampleRateHz / HERTZ_PER_KILOHERTZ) * msToPushPerIteration.count()) {
 
     std::stringstream sensitivities;
     std::stringstream modelPaths;

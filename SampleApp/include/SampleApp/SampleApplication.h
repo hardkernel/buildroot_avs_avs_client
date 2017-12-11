@@ -15,8 +15,8 @@
  * permissions and limitations under the License.
  */
 
-#ifndef ALEXA_CLIENT_SDK_SAMPLE_APP_INCLUDE_SAMPLE_APP_SAMPLE_APPLICATION_H_
-#define ALEXA_CLIENT_SDK_SAMPLE_APP_INCLUDE_SAMPLE_APP_SAMPLE_APPLICATION_H_
+#ifndef ALEXA_CLIENT_SDK_SAMPLEAPP_INCLUDE_SAMPLEAPP_SAMPLEAPPLICATION_H_
+#define ALEXA_CLIENT_SDK_SAMPLEAPP_INCLUDE_SAMPLEAPP_SAMPLEAPPLICATION_H_
 
 #include "ConsolePrinter.h"
 #include "UserInputManager.h"
@@ -25,6 +25,7 @@
 #ifdef KWD
 #include <KWD/AbstractKeywordDetector.h>
 #endif
+#include <MediaPlayer/MediaPlayer.h>
 
 #include <memory>
 
@@ -57,6 +58,9 @@ public:
     std::thread keyInputThread;
     void key_input_run();
 
+    /// Destructor which manages the @c SampleApplication shutdown sequence.
+    ~SampleApplication();
+
 private:
     /**
      * Initialize a SampleApplication.
@@ -78,6 +82,15 @@ private:
     /// The @c UserInputKeyManager which controls the client.
     std::unique_ptr<UserInputKeyManager> m_userInputKeyManager;
 
+    /// The @c MediaPlayer used by @c SpeechSynthesizer.
+    std::shared_ptr<mediaPlayer::MediaPlayer> m_speakMediaPlayer;
+
+    /// The @c MediaPlayer used by @c AudioPlayer.
+    std::shared_ptr<mediaPlayer::MediaPlayer> m_audioMediaPlayer;
+
+    /// The @c MediaPlayer used by @c Alerts.
+    std::shared_ptr<mediaPlayer::MediaPlayer> m_alertsMediaPlayer;
+
 #ifdef KWD
     /// The Wakeword Detector which can wake up the client using audio input.
     std::unique_ptr<kwd::AbstractKeywordDetector> m_keywordDetector;
@@ -87,4 +100,4 @@ private:
 }  // namespace sampleApp
 }  // namespace alexaClientSDK
 
-#endif  // ALEXA_CLIENT_SDK_SAMPLE_APP_INCLUDE_SAMPLE_APP_SAMPLE_APPLICATION_H_
+#endif  // ALEXA_CLIENT_SDK_SAMPLEAPP_INCLUDE_SAMPLEAPP_SAMPLEAPPLICATION_H_
