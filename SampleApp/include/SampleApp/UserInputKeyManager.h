@@ -21,7 +21,9 @@
 #include <memory>
 #include "InteractionManager.h"
 
+#ifdef DISPLAYCARD_AML
 #include <DisplayCardImpCom.h>
+#endif
 
 namespace alexaClientSDK {
 namespace sampleApp {
@@ -42,10 +44,11 @@ public:
      */
     void run();
 
+#ifdef DISPLAYCARD_AML
     bool remote_player_key_init();
     std::thread remote_player_key_thread;
     void remote_player_key_run_thread();
-
+#endif
 
 private:
     /**

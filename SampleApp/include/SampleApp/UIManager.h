@@ -27,7 +27,9 @@
 #include <AVSCommon/Utils/Threading/Executor.h>
 
 #include <ledClient.h>
+#ifdef DISPLAYCARD_AML
 #include <DisplayCardImpCom.h>
+#endif
 
 namespace alexaClientSDK {
 namespace sampleApp {

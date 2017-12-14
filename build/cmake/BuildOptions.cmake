@@ -44,6 +44,9 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+if(DISPLAYCARD_AML_IMPL)
+add_definitions(-DDISPLAYCARD_AML)
+endif()
 
 # Determine the platform and compiler dependent flags.
 if (UNIX)

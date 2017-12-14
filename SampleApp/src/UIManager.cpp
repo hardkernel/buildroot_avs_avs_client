@@ -121,7 +121,9 @@ static const std::string VOLUME_CONTROL_MESSAGE =
     "+----------------------------------------------------------------------------+\n";
 
 static int ledres = 0;
+#ifdef DISPLAYCARD_AML
 static int dispres = 0;
+#endif
 static int ledstate = -1;
 static struct leds state[] = {
     {1,1,9,3,_RED,_POSITIVE,_MOVE},
@@ -132,6 +134,7 @@ static struct leds state[] = {
     {1,1,1,0,_RED,_POSITIVE,_MOVE},
 };
 
+#ifdef DISPLAYCARD_AML
 static const char* disp_state[] = {
     "server_state_idle",
     "server_state_listening",
@@ -139,6 +142,7 @@ static const char* disp_state[] = {
     "server_state_speaking",
     "server_state_finished",
 };
+#endif
 
 void UIManager::onDialogUXStateChanged(DialogUXState state) {
     m_executor.submit([this, state]() {
@@ -152,9 +156,9 @@ void UIManager::onDialogUXStateChanged(DialogUXState state) {
 
 void UIManager::led_release() {
     ledres = ledShow(&state[4]);
-    if (ledres < 0) printf("[%d]ledShow stop state err!\n", __LINE__);
+    if (ledres < 0) ConsolePrinter::prettyPrint("led_release:ledShow stop state err!");
     ledres = ledRelease();
-    if (ledres < 0) printf("[%d]ledRelease err!\n", __LINE__);
+    if (ledres < 0) ConsolePrinter::prettyPrint("led_release:ledRelease err!");
     ledstate = -1;
     ConsolePrinter::prettyPrint("led release .....ok!");
 }
@@ -162,7 +166,7 @@ void UIManager::led_release() {
 void UIManager::led_init() {
     if (ledstate == -1) {
         ledres = ledInit();
-        if (ledres < 0) printf("[%d]ledInit err!\n", __LINE__);
+        if (ledres < 0) ConsolePrinter::prettyPrint("led_init:ledInit err!");
         ledstate=1;
         ConsolePrinter::prettyPrint("led init .....ok!");
     }
@@ -232,7 +236,8 @@ void UIManager::printErrorScreen() {
 void UIManager::microphoneOff() {
     m_executor.submit(
         [] () {
-            ledres = ledShow(&state[5]); if (ledres < 0) printf("[%d]ledShow Idle state err!\n", __LINE__);
+            ledres = ledShow(&state[5]);
+	    if (ledres < 0) ConsolePrinter::prettyPrint("microphoneOff:ledShow Idle state err!");
             ConsolePrinter::prettyPrint("Microphone Off!");
         }
     );
@@ -250,47 +255,59 @@ void UIManager::printState() {
     } else if (m_connectionStatus == avsCommon::sdkInterfaces::ConnectionStatusObserverInterface::Status::CONNECTED) {
         switch (m_dialogState) {
             case DialogUXState::IDLE:
-                ledres = ledShow(&state[0]); if (ledres < 0) printf("[%d]ledShow Idle state err!\n", __LINE__);
+                ledres = ledShow(&state[0]);
+		if (ledres < 0) ConsolePrinter::prettyPrint("printState:IDLE:ledShow Idle state err!");
 
+#ifdef DISPLAYCARD_AML
                 dispres = disp_connection(DISPLAYCARD_SERVER);
-                if (dispres < 0) printf("disp connection fail!\n");
+                if (dispres < 0) ConsolePrinter::prettyPrint("printState:IDLE:disp connection fail!");
                 else {
                     dispres = disp_send((char**)&disp_state[0], DISPCARD_STATE_METHOD);
-                    if (dispres < 0) printf("disp send fail\n");\
+                    if (dispres < 0) ConsolePrinter::prettyPrint("printState:IDLE:disp send fail!");
                 }
+#endif
                 ConsolePrinter::prettyPrint("Alexa is currently idle!");
                 return;
             case DialogUXState::LISTENING:
-                ledres = ledShow(&state[3]); if (ledres < 0) printf("[%d]ledShow Listening state err!\n",__LINE__);
+                ledres = ledShow(&state[3]);
+		if (ledres < 0) ConsolePrinter::prettyPrint("printState:LISTENING:ledShow Listening state err!");
 
+#ifdef DISPLAYCARD_AML
                 dispres = disp_connection(DISPLAYCARD_SERVER);
-                if (dispres < 0) printf("disp connection fail!\n");
+                if (dispres < 0) ConsolePrinter::prettyPrint("printState:LISTENING:disp connection fail!");
                 else {
                     dispres = disp_send((char**)&disp_state[1], DISPCARD_STATE_METHOD);
-                    if (dispres < 0) printf("disp send fail\n");
+                    if (dispres < 0) ConsolePrinter::prettyPrint("printState:LISTENING:disp send fail!");
                 }
+#endif
                 ConsolePrinter::prettyPrint("Listening...");
                 return;
             case DialogUXState::THINKING:
-                ledres = ledShow(&state[2]); if (ledres < 0) printf("[%d]ledShow Thinking state err!\n",__LINE__);
+                ledres = ledShow(&state[2]);
+                if (ledres < 0) ConsolePrinter::prettyPrint("printState:THINKING:ledShow Thinking state err!");
+#ifdef DISPLAYCARD_AML
                 dispres = disp_connection(DISPLAYCARD_SERVER);
-                if (dispres < 0) printf("disp connection fail!\n");
+                if (dispres < 0) ConsolePrinter::prettyPrint("printState:THINKING:disp connection fail!");
                 else {
                     dispres = disp_send((char**)&disp_state[2], DISPCARD_STATE_METHOD);
-                    if (dispres < 0) printf("disp send fail\n");
+                    if (dispres < 0) ConsolePrinter::prettyPrint("printState:THINKING:disp send fail!");
                 }
+#endif
                 ConsolePrinter::prettyPrint("Thinking...");
                 return;
                 ;
             case DialogUXState::SPEAKING:
-                ledres = ledShow(&state[1]); if (ledres < 0) printf("[%d]ledShow Speaking state err!\n",__LINE__);
+                ledres = ledShow(&state[1]);
+		if (ledres < 0) ConsolePrinter::prettyPrint("printState:SPEAKING:ledShow Speaking state err!");
 
+#ifdef DISPLAYCARD_AML
                 dispres = disp_connection(DISPLAYCARD_SERVER);
-                if (dispres < 0) printf("disp connection fail!\n");
+                if (dispres < 0) ConsolePrinter::prettyPrint("printState:SPEAKING:disp connection fail!");
                 else {
                     dispres = disp_send((char**)&disp_state[3], DISPCARD_STATE_METHOD);
-                    if (dispres < 0) printf("disp send fail\n");
+                    if (dispres < 0) ConsolePrinter::prettyPrint("printState:SPEAKING:disp send fail!");
                 }
+#endif
                 ConsolePrinter::prettyPrint("Speaking...");
                 return;
             /*
@@ -300,12 +317,13 @@ void UIManager::printState() {
              */
             case DialogUXState::FINISHED:
 
+#ifdef DISPLAYCARD_AML
                 //dispres = disp_connection(DISPLAYCARD_SERVER);
-                //if (dispres < 0) printf("disp connection fail!\n");
+                //if (dispres < 0) ConsolePrinter::prettyPrint("printState:FINISHED:disp connection fail!");
 
                 //dispres = disp_send((char**)&disp_state[4], DISPCARD_STATE_METHOD);
-                //if (dispres < 0) printf("disp send fail\n");
-
+                //if (dispres < 0) ConsolePrinter::prettyPrint("printState:FINISHED:disp send fail!");
+#endif
                 return;
         }
     }
