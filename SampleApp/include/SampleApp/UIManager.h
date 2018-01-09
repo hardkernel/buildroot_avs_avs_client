@@ -64,6 +64,7 @@ public:
     void led_init();
     void led_release();
 
+    void directionDetectSta(int val);
     /**
      * Prints the welcome screen.
      */

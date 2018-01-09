@@ -85,6 +85,8 @@ PortAudioMicrophoneWrapper* wrapper;
 std::mutex rb_mutex;
 std::condition_variable rb_cond;
 
+Sample DOA;
+
 #define DSP_DEBUG 0
 #define DSP_SOCKET 1
 
@@ -698,6 +700,7 @@ void do_dsp_processing_fn(int* in_samples , int* out_samples , int inCount , int
 
     int error = 0;
     Sample retVal;
+    bool print_DOA = true;
 
     //printf(" do_dsp_processing_fn \n");
     loopCount += PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP;
@@ -738,7 +741,15 @@ void do_dsp_processing_fn(int* in_samples , int* out_samples , int inCount , int
                         endIndex , 0);
 
     //printf(" error endindex %d \n" , error);
-    //printf("[DSP] detectionResult %d \n" , result);
+
+    error = pAwelib->FetchValues(MAKE_ADDRESS(AWE_FreqDomainProcessing____Direction_ID,
+        AWE_FreqDomainProcessing____Direction_value_OFFSET ), 1 ,
+        &DOA , 0);
+    if (print_DOA && result) {
+        printf("[DSP] DOA %d \n" , DOA.iVal);
+        m_userInterfaceManager->directionDetectSta(DOA.iVal);
+        print_DOA = false;
+    }
 }
 
 void PortAudioMicrophoneWrapper::do_dsp_processing() {

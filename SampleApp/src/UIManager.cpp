@@ -126,6 +126,10 @@ static int dispres = 0;
 #endif
 static int ledstate = -1;
 
+static int mic_dir = 0;
+
+static int mic_dir_map[13]= {16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 21};
+
 #ifdef DISPLAYCARD_AML
 static const char* disp_state[] = {
     "server_state_idle",
@@ -147,7 +151,7 @@ void UIManager::onDialogUXStateChanged(DialogUXState state) {
 }
 
 void UIManager::led_release() {
-    ledres = ledShow(6, 0, 1000, 1, 0);
+    ledres = ledShow(12, 1, 1000, 0, 2, 0, 0);
     if (ledres < 0) ConsolePrinter::prettyPrint("led_release:ledShow stop state err!");
     ledres = ledRelease();
     if (ledres < 0) ConsolePrinter::prettyPrint("led_release:ledRelease err!");
@@ -193,6 +197,8 @@ void UIManager::onSpeakerSettingsChanged(
         std::ostringstream oss;
         oss << "SOURCE:" << source << " TYPE:" << type << " VOLUME:" << static_cast<int>(settings.volume)
             << " MUTE:" << settings.mute;
+        ledres = ledShow(12, 1, 500, 2, (static_cast<int>(settings.volume)/10)+3, 0, 0);
+        if (ledres < 0) ConsolePrinter::prettyPrint("onSpeakerSettingsChanged:ledShow volume state err!");
         ConsolePrinter::prettyPrint(oss.str());
     });
 }
@@ -228,11 +234,17 @@ void UIManager::printErrorScreen() {
 void UIManager::microphoneOff() {
     m_executor.submit(
         [] () {
-            ledres = ledShow(6, 0, 1500, 0, 4);
-	    if (ledres < 0) ConsolePrinter::prettyPrint("microphoneOff:ledShow Idle state err!");
+            ledres = ledShow(12, 1, 1000, 0, 29, 1, 0);
+            if (ledres < 0) ConsolePrinter::prettyPrint("microphoneOff:ledShow Idle state err!");
             ConsolePrinter::prettyPrint("Microphone Off!");
         }
     );
+}
+
+void UIManager::directionDetectSta(int val)
+{
+    //printf("directional value:%d\n", val);
+    mic_dir = val;
 }
 
 void UIManager::microphoneOn() {
@@ -247,8 +259,8 @@ void UIManager::printState() {
     } else if (m_connectionStatus == avsCommon::sdkInterfaces::ConnectionStatusObserverInterface::Status::CONNECTED) {
         switch (m_dialogState) {
             case DialogUXState::IDLE:
-                ledres = ledShow(6, 0, 200, 5, 1);
-		if (ledres < 0) ConsolePrinter::prettyPrint("printState:IDLE:ledShow Idle state err!");
+                ledres = ledShow(12, 0, 100, 3, 15, 0, 0);
+                if (ledres < 0) ConsolePrinter::prettyPrint("printState:IDLE:ledShow Idle state err!");
 
 #ifdef DISPLAYCARD_AML
                 dispres = disp_connection(DISPLAYCARD_SERVER);
@@ -261,8 +273,8 @@ void UIManager::printState() {
                 ConsolePrinter::prettyPrint("Alexa is currently idle!");
                 return;
             case DialogUXState::LISTENING:
-                ledres = ledShow(6, 0, 1000, 0, 3);
-		if (ledres < 0) ConsolePrinter::prettyPrint("printState:LISTENING:ledShow Listening state err!");
+                ledres = ledShow(12, 1, 50, 0, mic_dir_map[mic_dir], 0, 0);
+                if (ledres < 0) ConsolePrinter::prettyPrint("printState:LISTENING:ledShow Listening state err!");
 
 #ifdef DISPLAYCARD_AML
                 dispres = disp_connection(DISPLAYCARD_SERVER);
@@ -275,7 +287,7 @@ void UIManager::printState() {
                 ConsolePrinter::prettyPrint("Listening...");
                 return;
             case DialogUXState::THINKING:
-                ledres = ledShow(6, 0, 200, 0, 6);
+                ledres = ledShow(12, 0, 100, 0, 14, 0, 0);
                 if (ledres < 0) ConsolePrinter::prettyPrint("printState:THINKING:ledShow Thinking state err!");
 #ifdef DISPLAYCARD_AML
                 dispres = disp_connection(DISPLAYCARD_SERVER);
@@ -289,8 +301,8 @@ void UIManager::printState() {
                 return;
                 ;
             case DialogUXState::SPEAKING:
-                ledres = ledShow(6, 0, 600, 0, 5);
-		if (ledres < 0) ConsolePrinter::prettyPrint("printState:SPEAKING:ledShow Speaking state err!");
+                ledres = ledShow(12, 0, 100, 0, 28, 0, 0);
+                if (ledres < 0) ConsolePrinter::prettyPrint("printState:SPEAKING:ledShow Speaking state err!");
 
 #ifdef DISPLAYCARD_AML
                 dispres = disp_connection(DISPLAYCARD_SERVER);
@@ -308,6 +320,7 @@ void UIManager::printState() {
              * nothing for this state.
              */
             case DialogUXState::FINISHED:
+                ConsolePrinter::prettyPrint("finished...");
 
 #ifdef DISPLAYCARD_AML
                 //dispres = disp_connection(DISPLAYCARD_SERVER);
