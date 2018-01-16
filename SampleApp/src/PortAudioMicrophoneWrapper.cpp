@@ -36,7 +36,7 @@ namespace sampleApp {
 using avsCommon::avs::AudioInputStream;
 using namespace capabilityAgents::aip;
 
-#define REC_DEVICE_NAME "hw:0,3"
+#define REC_DEVICE_NAME "microphone"
 static const int NUM_INPUT_CHANNELS = 8;
 static const int NUM_OUTPUT_CHANNELS = 0;
 static const double SAMPLE_RATE = 48000;
