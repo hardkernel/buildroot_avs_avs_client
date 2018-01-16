@@ -1,7 +1,7 @@
 /*
  * PortAudioMicrophoneWrapper.cpp
  *
- * Copyright (c) 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -979,5 +979,5 @@ void PortAudioMicrophoneWrapper::do_pcm_read() {
 error:
     if (handle) snd_pcm_close(handle);
 }
-} // namespace sampleApp
-} // namespace alexaClientSDK
+}  // namespace sampleApp
+}  // namespace alexaClientSDK
