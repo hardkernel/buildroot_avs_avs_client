@@ -154,7 +154,7 @@ ESPDataProvider::ESPDataProvider(
         m_reader{std::move(reader)},
         m_vad{frameSize},
         m_frameEnergyCompute{frameSize},
-        m_isEnabled{true},
+        m_isEnabled{false},
         m_isShuttingDown{false},
         m_frameSize{frameSize} {
     m_vad.blkReset();

@@ -42,7 +42,7 @@ using avsCommon::avs::AudioInputStream;
 using namespace capabilityAgents::aip;
 
 #define REC_DEVICE_NAME "microphone"
-static const int NUM_INPUT_CHANNELS = 8;
+static const int NUM_INPUT_CHANNELS = 16;
 static const int NUM_OUTPUT_CHANNELS = 0;
 static const double SAMPLE_RATE = 48000;
 static const unsigned long PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP = 768;
@@ -81,7 +81,7 @@ volatile int wp = 0;
 
 PortAudioMicrophoneWrapper* wrapper;
 #define SAMPLE_RATE 48000
-#define WRITE_DEVICE_NAME "dmixer"
+#define WRITE_DEVICE_NAME "dmixer_avs"
 #define READ_FRAME 768
 #define BUFFER_SIZE (SAMPLE_RATE/2)
 #define PERIOD_SIZE (BUFFER_SIZE/4)
@@ -92,8 +92,8 @@ std::condition_variable rb_cond;
 
 Sample DOA;
 
-#define DSP_DEBUG 0
-#define DSP_SOCKET 1
+#define DSP_DEBUG 1
+#define DSP_SOCKET 0
 
 #if DSP_DEBUG == 1
 #define WRITE_UNIT (READ_FRAME * 2)
@@ -184,28 +184,42 @@ static void NotifyFunction(void *pAwe, int count)
 #endif
 
 #if DSP_DEBUG == 1
+int debug_output_enabled(void)
+{
+    char *env = getenv("AVS_DEBUGOUT");
+
+    if ((env) && (env[0] == '1'))
+        return 1;
+
+    return 0;
+}
+
 void fill_write_buffer(int* input)
 {
     int space = rp_pcm - wp_pcm;
     if (space <= 0 ) space = RING_PCM_SIZE + space;
-    if (space < READ_FRAME*2 ) {
+    if (space < (int)(READ_FRAME*out_chans) ) {
         printf(" OVERFLOW IN fill_write_buffer wp_pcm %d , rp_pcm %d \n" , wp_pcm , rp_pcm);
     }
 
-    for (int i = 0 ; i < READ_FRAME*2 ;  i = i+2) {
+    for (int i = 0 ; i < (int)(READ_FRAME*out_chans) ;  i = i+out_chans) {
         ring_pcm_buffer[wp_pcm] = input[1];
         wp_pcm++;
         if (wp_pcm == RING_PCM_SIZE)
             wp_pcm = 0;
-        ring_pcm_buffer[wp_pcm] = 0;
+        if (out_chans == 2)
+            ring_pcm_buffer[wp_pcm] = 0;
+        else
+            ring_pcm_buffer[wp_pcm] = input[2];
         wp_pcm++;
         if (wp_pcm == RING_PCM_SIZE)
             wp_pcm = 0;
 
-        input += 2;
+        input += out_chans;
     }
 }
 
+#if 0
 void fill_write_buffer1(int* input)
 {
     int space = rp_pcm - wp_pcm;
@@ -229,6 +243,7 @@ void fill_write_buffer1(int* input)
         input = input + 8;
     }
 }
+#endif
 
 void PortAudioMicrophoneWrapper::do_debug_pcm_write()
 {
@@ -307,6 +322,11 @@ void PortAudioMicrophoneWrapper::do_debug_pcm_write()
     printf(" open write device is successful \n");
 
     while (1) {
+        if (!debug_output_enabled()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            continue;
+        }
+
         level = wp_pcm - rp_pcm;
         if (level < 0 ) level = RING_PCM_SIZE + level;
 
@@ -336,6 +356,8 @@ void PortAudioMicrophoneWrapper::do_debug_pcm_write()
                     goto error;
                 }
             }
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
         }
     }
 
@@ -575,7 +597,9 @@ PortAudioMicrophoneWrapper::PortAudioMicrophoneWrapper(std::shared_ptr<AudioInpu
         m_audioInputStream{stream}, m_paStream{nullptr}, mic_mute_flag{false} {
 
 #if DSP_DEBUG == 1
-    debug_pcm_write = std::thread(&PortAudioMicrophoneWrapper::do_debug_pcm_write ,this);
+    //auto& loggerInstance = alexaClientSDK::avsCommon::utils::logger::ACSDK_GET_LOGGER_FUNCTION();
+    //if (loggerInstance.shouldLog(alexaClientSDK::avsCommon::utils::logger::Level::DEBUG9))
+        debug_pcm_write = std::thread(&PortAudioMicrophoneWrapper::do_debug_pcm_write ,this);
 #endif
 
 }
@@ -696,6 +720,7 @@ bool PortAudioMicrophoneWrapper::stopStreamingMicrophoneData() {
     return true;
 }
 
+#if 0
 //in : 32bit , 48K , 1 ch (outsamples from DSP )
 //out : 16bit , 16K , 1 ch ( every 3rd sample ) ( audioData_SDS )
 void convert_DSP(int* input , short *output , int frame_num)
@@ -706,18 +731,20 @@ void convert_DSP(int* input , short *output , int frame_num)
         input += 3;
     }
 }
+#endif
 
-//in : 32bit , 48K , 2 ch (outsamples from DSP )
+//in : 32bit , 48K , out_chans ch (outsamples from DSP )
 //out : 16bit , 16K , 1 ch ( every 6th sample ) ( audioData_SDS )
 void convert_DSP_2ch(int* input , short *output , int frame_num)
 {
-    for (int i = 0 ; i < frame_num*2  ; i += 6) {
+    for (int i = 0 ; i < (int)(frame_num*out_chans)  ; i += 3*out_chans) {
         *output = *input >> 16;
         output++;
-        input += 6;
+        input += 3*out_chans;
     }
 }
 
+#if 0
 // in : 32bit , 48K , 8 channels
 // out : 16bit , 48K , 1 channel
 int convert(int *input, short *output, int frame_num)
@@ -728,24 +755,38 @@ int convert(int *input, short *output, int frame_num)
     }
     return 0;
 }
+#endif
 
-// input : 8 ch , 0,1 feedback , 2,3,4,5 are data , 6,7 is empty , 32 bit
-// output : 10 ch , 0,1,2,3,4,5 : data , 6,7 not used , 8,9 : feedback , 32 bit
+// input : 8 ch , channel 0-6 are MIC data, channel 7 loopback, 32 bit
+// input : 16 ch, channel 0-7 are MIC data, channel 8-15 loopback, 32 bit
+// output : 10 ch , 0-6 MIC data, 7 reserved, 8-9: stereo loopback , 32 bit
 int convert1(int *input, int *output, int frame_num)
 {
     int i;
     memset(output , 0 , frame_num*10);
-    for (i = 0; i < frame_num*8; i = i+8) {
-        output[0] = input [0];
-        output[1] = input [1];
-        output[2] = input [2];
-        output[3] = input [3];
-        output[4] = input [4];
-        output[5] = input [5];
-        output[8] = input [6];
-        output[9] = input [7];
+    for (i = 0; i < frame_num*NUM_INPUT_CHANNELS; i = i+NUM_INPUT_CHANNELS) {
+        if (NUM_INPUT_CHANNELS == 8) {
+            output[0] = input[0];
+            output[1] = input[1];
+            output[2] = input[2];
+            output[3] = input[3];
+            output[4] = input[4];
+            output[5] = input[5];
+            output[8] = input[6];
+            output[9] = input[7];
+        } else if (NUM_INPUT_CHANNELS == 16) {
+            output[0] = input[0];
+            output[1] = input[1];
+            output[2] = input[2];
+            output[3] = input[3];
+            output[4] = input[4];
+            output[5] = input[5];
+            output[6] = input[6];
+            output[8] = input[8];
+            output[9] = input[9];
+        }
 
-        input += 8;
+        input += NUM_INPUT_CHANNELS;
         output += 10;
     }
 
@@ -761,7 +802,7 @@ void do_dsp_processing_fn(int* in_samples , int* out_samples , int inCount , int
 
     //printf(" do_dsp_processing_fn \n");
     loopCount += PREFERRED_SAMPLES_PER_CALLBACK_FOR_DSP;
-    if (loopCount > 16000 * 8) {
+    if (loopCount > 16000 * NUM_INPUT_CHANNELS) {
         //printf("detection loop heart beat ...\n");
         loopCount = 0;
     }
@@ -779,7 +820,10 @@ void do_dsp_processing_fn(int* in_samples , int* out_samples , int inCount , int
 #endif
 
 #if DSP_DEBUG == 1
-    fill_write_buffer(&out_samples[0]);
+    //auto& loggerInstance = alexaClientSDK::avsCommon::utils::logger::ACSDK_GET_LOGGER_FUNCTION();
+    //if (loggerInstance.shouldLog(alexaClientSDK::avsCommon::utils::logger::Level::DEBUG9))
+    if (debug_output_enabled())
+        fill_write_buffer(&out_samples[0]);
 #endif
     if (error < 0) {
         printf("[DSP pump of audio failed with %d\n", error);
@@ -932,7 +976,7 @@ void PortAudioMicrophoneWrapper::do_pcm_read() {
     snd_pcm_hw_params_t *params;
     int err;
     int dir;
-    int buffer[READ_FRAME * 8 * 4];
+    int buffer[READ_FRAME * 16 * 4];
     unsigned int sampleRate = SAMPLE_RATE;
     snd_pcm_uframes_t periodSize = PERIOD_SIZE;
     snd_pcm_uframes_t bufferSize = BUFFER_SIZE;
@@ -961,7 +1005,7 @@ void PortAudioMicrophoneWrapper::do_pcm_read() {
         goto error;
     }
 
-    err = snd_pcm_hw_params_set_channels(handle, params, 8);
+    err = snd_pcm_hw_params_set_channels(handle, params, NUM_INPUT_CHANNELS);
     if (err) {
         printf( "Error setting channels: %s\n", snd_strerror(err));
         goto error;
