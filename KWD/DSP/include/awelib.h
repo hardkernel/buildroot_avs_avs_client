@@ -289,9 +289,11 @@ struct CAWELib
 			const Sample *args,
 			UINT32 offset = 0) = 0;
 
+#ifndef NO_LOAD_FILE
 	/**
 	 * @brief Load an AWB file into AWE.
 	 * @param [in] filename			file to load
+	 * @param [out] pPos			if non-NULL, return failing word offset
 	 * @return						0 or error code
 	 *
 	 * Loads a layout file in AWB format. After loading a layout, you
@@ -301,8 +303,33 @@ struct CAWELib
 	 * E_NOT_CREATED - Create() must be called before use.
 	 * E_ARGUMENT_ERROR - filename is not valid.
 	 * Others - see Errors.h.
+	 *
+	 * On error, if pPos is given, the word offset of the failing
+	 * command is returned.
 	 */
 	virtual int LoadAwbFile(const char *filename, UINT32 *pPos = 0) = 0;
+#endif
+
+	/**
+	 * @brief Load an AWB file from memory into AWE.
+	 * @param [in] buffer			buffer containing words to load
+	 * @param [in] len				number of words in buffer
+	 * @param [out] pPos			if non-NULL, return failing word offset
+	 * @return						0 or error code
+	 *
+	 * Loads a layout file in AWB format that has been read into an array of words
+	 * as though by using fread(). Afterloading a layout, you should call
+	 * PinProps() to find out the layout input and output details.
+	 *
+	 * Possible error returns:
+	 * E_NOT_CREATED - Create() must be called before use.
+	 * E_ARGUMENT_ERROR - buffer or len is not valid.
+	 * Others - see Errors.h.
+	 *
+	 * On error, if pPos is given, the word offset of the failing
+	 * command is returned.
+	 */
+	virtual int LoadAwbMem(UINT32 *buffer, UINT32 len, UINT32 *pPos = 0) = 0;
 
 	/**
 	 * @brief Send a binary command to AWE.
@@ -366,7 +393,7 @@ struct CAWELib
 	 * @param [in] name				instance name (max 8 chars)
 	 * @param [in] cpu_clock_speed	CPU clock speed in Hz
 	 * @param [in] cpu_cycle_speed	sample clock speed in Hz
-	 * @param [in] profile			default true, pass false to disable profiling
+	 * @param [in] profile			default false, pass true to enable profiling
 	 * @return						0 or error code
 	 *
 	 * Creates the AWE instance. All other APIs will fail until you call this.
@@ -384,7 +411,7 @@ struct CAWELib
 	 * E_ARGUMENT_ERROR - invalid name.
 	 */
 	virtual int CreateEx(const char *name, float cpu_clock_speed, float cpu_cycle_speed,
-		bool profile = true) = 0;
+		bool profile = false) = 0;
 
 	/**
 	 * @brief Set callback handlers for start and stop audio events.
