@@ -19,6 +19,7 @@
 #include <rapidjson/document.h>
 
 #include <AVSCommon/Utils/Configuration/ConfigurationNode.h>
+#include <AVSCommon/Utils/Logger/Logger.h>
 #include "SampleApp/PortAudioMicrophoneWrapper.h"
 #include "SampleApp/ConsolePrinter.h"
 #include "AIP/AudioInputProcessor.h"
@@ -425,11 +426,21 @@ static const std::string SAMPLE_APP_CONFIG_ROOT_KEY("sampleApp");
 static const std::string PORTAUDIO_CONFIG_ROOT_KEY("portAudio");
 static const std::string PORTAUDIO_CONFIG_SUGGESTED_LATENCY_KEY("suggestedLatency");
 
+/// String to identify log entries originating from this file.
+static const std::string TAG("PortAudioMicrophoneWrapper");
+
+/**
+ * Create a LogEntry using this file's TAG and the specified event string.
+ *
+ * @param The event string for this @c LogEntry.
+ */
+#define LX(event) alexaClientSDK::avsCommon::utils::logger::LogEntry(TAG, event)
+
 std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
         std::shared_ptr<AudioInputStream> stream , void(*fp)(uint64_t startIndex , uint64_t endIndex),
         std::shared_ptr<alexaClientSDK::sampleApp::UIManager> userInterfaceManager) {
     if (!stream) {
-        ConsolePrinter::simplePrint("Invalid stream passed to PortAudioMicrophoneWrapper");
+        ACSDK_CRITICAL(LX("Invalid stream passed to PortAudioMicrophoneWrapper"));
         return nullptr;
     }
     std::unique_ptr<PortAudioMicrophoneWrapper> portAudioMicrophoneWrapper(
@@ -440,7 +451,7 @@ std::unique_ptr<PortAudioMicrophoneWrapper> PortAudioMicrophoneWrapper::create(
     m_userInterfaceManager = userInterfaceManager;
 
     if (!portAudioMicrophoneWrapper->initialize()) {
-        ConsolePrinter::simplePrint("Failed to initialize PortAudioMicrophoneWrapper");
+        ACSDK_CRITICAL(LX("Failed to initialize PortAudioMicrophoneWrapper"));
         return nullptr;
     }
 
@@ -581,14 +592,14 @@ bool PortAudioMicrophoneWrapper::initialize() {
 
     m_writer = m_audioInputStream->createWriter(AudioInputStream::Writer::Policy::NONBLOCKABLE);
     if (!m_writer) {
-        ConsolePrinter::simplePrint("Failed to create stream writer");
+        ACSDK_CRITICAL(LX("Failed to create stream writer"));
         return false;
     }
 #if 0
     PaError err;
     err = Pa_Initialize();
     if (err != paNoError) {
-        ConsolePrinter::simplePrint("Failed to initialize PortAudio");
+        ACSDK_CRITICAL(LX("Failed to initialize PortAudio"));
         return false;
     }
     err = Pa_OpenDefaultStream(
@@ -620,8 +631,8 @@ bool PortAudioMicrophoneWrapper::initialize() {
             PortAudioCallback,
             this);
     } else {
-        ConsolePrinter::simplePrint(
-            "PortAudio suggestedLatency has been configured to " + std::to_string(suggestedLatency) + " Seconds");
+        ACSDK_INFO(
+            LX("PortAudio suggestedLatency has been configured to ").d("Seconds", std::to_string(suggestedLatency)));
 
         PaStreamParameters inputParameters;
         std::memset(&inputParameters, 0, sizeof(inputParameters));
@@ -646,6 +657,7 @@ bool PortAudioMicrophoneWrapper::initialize() {
         ConsolePrinter::simplePrint("Failed to open PortAudio default stream");
         printf(" Failed to open PortAudio default stream \n");
         printf(" err %s \n" , Pa_GetErrorText(err));
+        ACSDK_CRITICAL(LX("Failed to open PortAudio default stream"));
         return false;
     }
 #endif
@@ -662,7 +674,7 @@ bool PortAudioMicrophoneWrapper::startStreamingMicrophoneData() {
     std::lock_guard<std::mutex> lock{m_mutex};
     PaError err = Pa_StartStream(m_paStream);
     if (err != paNoError) {
-        ConsolePrinter::simplePrint("Failed to start PortAudio stream");
+        ACSDK_CRITICAL(LX("Failed to start PortAudio stream"));
         return false;
     }
 #endif
@@ -677,7 +689,7 @@ bool PortAudioMicrophoneWrapper::stopStreamingMicrophoneData() {
     std::lock_guard<std::mutex> lock{m_mutex};
     PaError err = Pa_StopStream(m_paStream);
     if (err != paNoError) {
-        ConsolePrinter::simplePrint("Failed to stop PortAudio stream");
+        ACSDK_CRITICAL(LX("Failed to stop PortAudio stream"));
         return false;
     }
 #endif
@@ -890,11 +902,17 @@ int PortAudioMicrophoneWrapper::PortAudioCallback(
     PaStreamCallbackFlags statusFlags,
     void* userData) {
 
-    wrapper = static_cast<PortAudioMicrophoneWrapper*>(userData);
-
+    PortAudioMicrophoneWrapper* wrapper = static_cast<PortAudioMicrophoneWrapper*>(userData);
+    ssize_t returnCode = wrapper->m_writer->write(inputBuffer, numSamples);
+    if (returnCode <= 0) {
+        ACSDK_CRITICAL(LX("Failed to write to stream."));
+        return paAbort;
+    }
+    
     if (wp < rp && wp + (int)PREFERRED_SAMPLES_PER_CALLBACK_FOR_ALSA*NUM_INPUT_CHANNELS >= rp ) {
         printf(" OVERFLOW \n");
-    }
+	}
+
     printf("Coming to PortAudioCallback\n");
     memcpy(&ring_buffer[wp] , (int*)inputBuffer , PREFERRED_SAMPLES_PER_CALLBACK_FOR_ALSA*4*NUM_INPUT_CHANNELS);
 
@@ -910,8 +928,6 @@ int PortAudioMicrophoneWrapper::PortAudioCallback(
 }
 
 void PortAudioMicrophoneWrapper::do_pcm_read() {
-    dsp_process = std::thread (&PortAudioMicrophoneWrapper::do_dsp_processing ,this);
-
     snd_pcm_t *handle;
     snd_pcm_hw_params_t *params;
     int err;
@@ -920,6 +936,8 @@ void PortAudioMicrophoneWrapper::do_pcm_read() {
     unsigned int sampleRate = SAMPLE_RATE;
     snd_pcm_uframes_t periodSize = PERIOD_SIZE;
     snd_pcm_uframes_t bufferSize = BUFFER_SIZE;
+    
+    dsp_process = std::thread (&PortAudioMicrophoneWrapper::do_dsp_processing ,this);
 
     err = snd_pcm_open(&handle, REC_DEVICE_NAME, SND_PCM_STREAM_CAPTURE, 0);
     if (err) {

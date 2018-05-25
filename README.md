@@ -1,5 +1,7 @@
 ### IMPORTANT NOTE
-If you are updating from v1.3 or earlier to v1.6, you must update your `AlexaClientSDKConfig.json` to include a Notifications database. An updated sample is available in the quickstart guides for Ubuntu Linux, Raspberry Pi, macOS, and Generic Linux.
+Significant changes have been made to the authorization process and the `AlexaClientSDKConfig.json` configuration file in v1.7 of the AVS Device SDK. [Click here for update instructions](https://github.com/alexa/avs-device-sdk/wiki/Code-Based-Linking----Configuration-Update-Guide).
+
+See [release notes](https://github.com/alexa/avs-device-sdk#release-notes-and-known-issues) for a complete list of updates, enhancements, bug fixes, and known issues for this release.
 
 ### What is the Alexa Voice Service (AVS)?
 
@@ -80,6 +82,17 @@ Focus management is not specific to Capability Agents or Directive Handlers, and
 * [Speaker](https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/reference/speaker) - The interface for volume control, including mute and unmute.
 * [System](https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/reference/system) - The interface for communicating product status/state to AVS.
 * [TemplateRuntime](https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/reference/templateruntime) - The interface for rendering visual metadata.
+* [Bluetooth](https://developer.amazon.com/docs/alexa-voice-service/bluetooth.html) - The interface for managing Bluetooth connections between peer devices and Alexa-enabled products.
+
+### Security Best Practices
+
+In addition to adopting the [Security Best Practices for Alexa](https://developer.amazon.com/docs/alexa-voice-service/security-best-practices.html), when building the SDK:
+
+* Protect configuration parameters, such as those found in the AlexaClientSDKCOnfig.json file, from tampering and inspection.
+* Protect executable files and processes from tampering and inspection.
+* Protect storage of the SDK's persistent states from tampering and inspection.
+* Your C++ implementation of AVS Device SDK interfaces must not retain locks, crash, hang, or throw exceptions.
+* Use exploit mitigation flags and memory randomization techniques when you compile your source code, in order to prevent vulnerabilities from exploiting buffer overflows and memory corruptions.
 
 ### Important Considerations
 
@@ -90,30 +103,32 @@ Focus management is not specific to Capability Agents or Directive Handlers, and
   * [Contact KITT.AI](mailto:snowboy@kitt.ai) for information on SnowBoy licensing.
 * **IMPORTANT**: The Sensory wake word engine referenced in this document is time-limited: code linked against it will stop working when the library expires. The library included in this repository will, at all times, have an expiration date that is at least 120 days in the future. See [Sensory's GitHub ](https://github.com/Sensory/alexa-rpi#license)page for more information.
 
-
 ### Release Notes and Known Issues
 
 **Note**: Feature enhancements, updates, and resolved issues from previous releases are available to view in [CHANGELOG.md](https://github.com/alexa/alexa-client-sdk/blob/master/CHANGELOG.md).
 
-v1.6.0 released 03/08/2018:
+v1.7.1 released 05/04/2018:
 
 **Enhancements**
-* `rapidJson` is now included with "make install".
-* Updated the `TemplateRuntimeObserverInterface` to support clearing of `displayCards`.
-* Added Windows SDK support, along with an installation script (MinGW-w64).
-* Updated `ContextManager` to ignore context reported by a state provider.
-* The `SharedDataStream` object is now associated by playlist, rather than by URL.
-* Added the `RegistrationManager` component. Now, when a user logs out all persistent user-specific data is cleared from the SDK. The log out functionality can be exercised in the sample app with the new command: `k`.
+* Added the Bluetooth interface, which manages the Bluetooth connection between Alexa-enabled products and peer devices. This release supports `A2DP-SINK` and `AVRCP` profiles. **Note**: Bluetooth is optional and is currently limited to Raspberry Pi and Linux platforms.
+* Added new [Bluetooth dependencies](https://github.com/alexa/avs-device-sdk/wiki/Dependencies#bluetooth-dependencies) for Linux and Raspberry Pi.
+* Device Capability Framework (`DCF`) renamed to `Capabilities`.
+* Updated the non-CBL client ID error message to be more specific.
+* Updated the sample app to enter a limited interaction mode after an unrecoverable error.
 
 **Bug Fixes**
-* [Issue 400](https://github.com/alexa/avs-device-sdk/issues/400) Fixed a bug where the alert reminder did not iterate as intended after loss of network connection.
-* [Issue 477](https://github.com/alexa/avs-device-sdk/issues/477) Fixed a bug in which Alexa's weather response was being truncated.
-* Fixed an issue in which there were reports of instability related to the Sensory engine. To correct this, the `portAudio` [`suggestedLatency`](https://github.com/alexa/avs-device-sdk/blob/master/Integration/AlexaClientSDKConfig.json#L62) value can now be configured.
+* [Issue 597](https://github.com/alexa/avs-device-sdk/issues/597) - Fixed a bug where the sample app did not respond to locale change settings.   
+* Fixed issue where GStreamer 1.14 `MediaPlayerTest` failed on Windows.
+* Fixed an issue where a segmentation fault was triggered after unrecoverable error handling.
 
 **Known Issues**
 * The `ACL` may encounter issues if audio attachments are received but not consumed.
 * `SpeechSynthesizerState` currently uses `GAINING_FOCUS` and `LOSING_FOCUS` as a workaround for handling intermediate state. These states may be removed in a future release.
-* Music playback doesn't immediately stop when a user barges-in on iHeartRadio.
-* The Windows sample app hangs on exit.
-* GDB receives a `SIGTRAP` when troubleshooting the Windows sample app.
-* `make integration` doesn't work on Windows. Integration tests will need to be run individually.
+* The Alexa app doesn't always indicate when a device is successfully connected via Bluetooth.
+* Connecting a product to streaming media via Bluetooth will sometimes stop media playback within the source application. Resuming playback through the source application or toggling next/previous will correct playback.
+* When streaming silence via Bluetooth, the Alexa companion app will sometimes indicate that media content is streaming.
+* The Bluetooth agent assumes that the Bluetooth adapter is always connected to a power source. Disconnecting from a power source during operation is not yet supported.
+* On some products, interrupted Bluetooth playback may not resume if other content is locally streamed.
+* When streaming content via Bluetooth, under certain conditions playback will fail to resume and the sample app hangs on exit. This is due to a conflict between the `GStreamer` pipeline and the Bluetooth agent.
+* On Raspberry Pi, when streaming audio via Bluetooth, sometimes the audio stream stutters.
+* On Raspberry Pi, `BlueALSA` must be terminated each time the device boots. See [Raspberry Pi Quick Start Guide](https://github.com/alexa/avs-device-sdk/wiki/Raspberry-Pi-Quick-Start-Guide-with-Script#bluetooth) for more information.

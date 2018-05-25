@@ -1,2 +1,13 @@
+include(../build/BuildDefaults.cmake)
 add_subdirectory("rapidjson")
 add_subdirectory("MultipartParser")
+add_subdirectory("bluez-alsa")
+
+set(GMOCK_MAIN_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-1.8.0/googlemock/libgmock_main.so" CACHE INTERNAL "")
+set(GMOCK_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-1.8.0/googlemock/libgmock.so" CACHE INTERNAL "")
+set(GTEST_MAIN_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-1.8.0/googlemock/gtest/libgtest_main.so" CACHE INTERNAL "")
+set(GTEST_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/googletest-release-1.8.0/googlemock/gtest/libgtest.so" CACHE INTERNAL "")
+install(FILES "${GMOCK_MAIN_LIB_DIR}" DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(FILES "${GMOCK_LIB_DIR}" DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(FILES "${GTEST_MAIN_LIB_DIR}" DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(FILES "${GTEST_LIB_DIR}" DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

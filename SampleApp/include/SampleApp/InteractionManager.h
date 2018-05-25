@@ -51,7 +51,8 @@ public:
         capabilityAgents::aip::AudioProvider tapToTalkAudioProvider,
         capabilityAgents::aip::AudioProvider wakeWordAudioProvider = capabilityAgents::aip::AudioProvider::null(),
         std::shared_ptr<esp::ESPDataProviderInterface> espProvider = nullptr,
-        std::shared_ptr<esp::ESPDataModifierInterface> espModifier = nullptr);
+        std::shared_ptr<esp::ESPDataModifierInterface> espModifier = nullptr,
+        std::shared_ptr<avsCommon::sdkInterfaces::CallManagerInterface> callManager = nullptr);
 
     /**
      * Begins the interaction between the Sample App and the user. This should only be called at startup.
@@ -62,6 +63,11 @@ public:
      * Should be called when a user requests help.
      */
     void help();
+
+    /**
+     * Should be called when a user requests help and the application failed to connect to AVS.
+     */
+    void limitedHelp();
 
     /**
      * Toggles the microphone state if the Sample App was built with wakeword. When the microphone is turned off, the
@@ -201,6 +207,21 @@ public:
     void setESPAmbientEnergy(const std::string& ambientEnergy);
 
     /**
+     * Grants the user access to the communications controls.
+     */
+    void commsControl();
+
+    /**
+     * Should be called when the user wants to accept a call.
+     */
+    void acceptCall();
+
+    /**
+     * Should be called when the user wants to stop a call.
+     */
+    void stopCall();
+
+    /**
      * UXDialogObserverInterface methods
      */
     void onDialogUXStateChanged(DialogUXState newState) override;
@@ -220,6 +241,9 @@ private:
 
     /// The ESP modifier.
     std::shared_ptr<esp::ESPDataModifierInterface> m_espModifier;
+
+    /// The call manager.
+    std::shared_ptr<avsCommon::sdkInterfaces::CallManagerInterface> m_callManager;
 
     /// The hold to talk audio provider.
     capabilityAgents::aip::AudioProvider m_holdToTalkAudioProvider;

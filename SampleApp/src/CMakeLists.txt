@@ -31,6 +31,7 @@ target_include_directories(SampleApp PUBLIC
     "${LEDRING_INCLUDE_DIR}"
     "${DISPLAYCARD_INCLUDE_DIR}"
     "${KWD_SOURCE_DIR}/include"
+    "${KWD_SOURCE_DIR}/KWDProvider/include"
     "${KWD_SOURCE_DIR}/DSP/include"
     "${RegistrationManager_SOURCE_DIR}/include"
     "${ESP_SOURCE_DIR}/include"
@@ -38,20 +39,17 @@ target_include_directories(SampleApp PUBLIC
 
 target_link_libraries(SampleApp 
     DefaultClient
-    AuthDelegate
+    CapabilitiesDelegate
+    CBLAuthDelegate
     MediaPlayer
     "${LEDRING_LIB_PATH}"
     "${DISPLAYCARD_LIB_PATH}"
+    SQLiteStorage
     ESP
     "${PORTAUDIO_LIB_PATH}")
 
-if(KITTAI_KEY_WORD_DETECTOR)
-    target_link_libraries(SampleApp 
-        KITTAI)
-endif()
-
-if(SENSORY_KEY_WORD_DETECTOR)
-    target_link_libraries(SampleApp SENSORY)
+if(KWD)
+    target_link_libraries(SampleApp KeywordDetectorProvider)
 endif()
 
 if(DSP_KEY_WORD_DETECTOR)
